@@ -1,7 +1,27 @@
+# Flask Web Application Dependencies
+# Replaces package.json and package-lock.json for Python Flask implementation
+# Enables reproducible installation via: pip install -r requirements.txt
+
+# Core Flask Web Framework
 Flask==3.1.2
+
+# Flask Ecosystem Dependencies (Transitive)
+# Required for complete Flask functionality
+
+# WSGI utilities and request handling
 Werkzeug==3.1.3
+
+# Template engine (Flask dependency)
 Jinja2==3.1.6
+
+# Command-line interface framework for Flask CLI
 Click==8.2.1
+
+# Cryptographic signing for data integrity and session security
 itsdangerous==2.2.0
+
+# Signal support for Flask's event system
 blinker==1.9.0
+
+# String safety utilities (Jinja2 transitive dependency)
 MarkupSafe==3.0.2
