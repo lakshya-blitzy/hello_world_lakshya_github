@@ -1,0 +1,37 @@
+# Development Dependencies for Flask Web Application
+# Extends requirements.txt with testing, linting, and development tooling
+# Install development environment via: pip install -r requirements-dev.txt
+
+# Base Production Dependencies
+# Include all Flask application dependencies from requirements.txt
+-r requirements.txt
+
+# Testing Framework
+# Primary testing framework for unit tests and Flask application testing
+pytest==8.3.3
+
+# HTTP Client Testing Library
+# Required for integration testing, response validation, and network binding verification
+requests==2.31.0
+
+# System and Process Monitoring
+# Performance monitoring for memory usage, CPU usage, and resource consumption validation
+psutil==5.9.6
+
+# Testing Utilities and Coverage
+# Enhanced testing capabilities and code coverage reporting
+pytest-cov==5.0.0
+
+# HTTP Testing Support
+# Additional tools for Flask-specific testing patterns
+Flask-Testing==0.8.1
+
+# Development Quality Tools
+# Code formatting and linting for development workflow
+black==24.8.0
+flake8==7.1.1
+
+# Additional Testing Dependencies
+# Time-based testing and fixture management
+pytest-mock==3.14.0
+freezegun==1.5.1
