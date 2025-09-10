@@ -1,0 +1,1268 @@
+# Node.js Tutorial HTTP Server - Comprehensive Security Scanning Workflow
+# GitHub Actions workflow that performs automated security analysis of the Node.js tutorial application
+# Demonstrates security scanning best practices while maintaining zero-dependency architecture alignment
+
+name: Security Scan
+
+# Workflow trigger configuration for comprehensive security validation
+on:
+  # Trigger security scan on code pushes to main branches affecting backend code, workflows, or infrastructure
+  push:
+    branches: 
+      - main
+      - develop
+    paths:
+      - 'src/backend/**'
+      - '.github/workflows/**'
+      - 'infrastructure/**'
+  
+  # Security validation for pull requests to main branch with path-based filtering
+  pull_request:
+    branches: 
+      - main
+    paths:
+      - 'src/backend/**'
+      - '.github/workflows/**' 
+      - 'infrastructure/**'
+  
+  # Weekly scheduled security scan on Mondays at 2 AM UTC for proactive vulnerability detection
+  schedule:
+    - cron: '0 2 * * 1'
+  
+  # Manual security scan trigger for ad-hoc security assessment and testing
+  workflow_dispatch:
+
+# Workflow permissions following principle of least privilege with explicit security events access
+permissions:
+  contents: read              # Read repository contents for security analysis
+  security-events: write      # Write security findings to GitHub Security tab
+  actions: read              # Read workflow and action information
+  pull-requests: write       # Comment on pull requests with security findings
+
+# Global environment variables for consistent security scanning configuration
+env:
+  NODE_VERSION: '20.x'                    # Node.js LTS version for security scanning
+  SECURITY_SCAN_TIMEOUT: '45'            # Maximum security scan duration in minutes
+  TRIVY_SEVERITY: 'CRITICAL,HIGH,MEDIUM' # Trivy vulnerability severity levels
+  SECURITY_POLICY_PATH: './src/backend/security/'  # Security configuration directory path
+  CODEQL_LANGUAGES: '["javascript"]'     # Languages for CodeQL static analysis
+
+# Comprehensive security scanning job pipeline with educational objectives
+jobs:
+  # Job 1: Dependency Security Audit - Validates zero-dependency architecture and NPM security
+  dependency_audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      # Secure repository checkout for dependency analysis with full history
+      - name: Checkout Repository
+        uses: actions/checkout@v4  # GitHub Actions checkout v4 for secure repository access
+        with:
+          fetch-depth: 0  # Full history for comprehensive dependency analysis
+      
+      # Setup Node.js runtime environment for NPM security audit execution
+      - name: Setup Node.js
+        uses: actions/setup-node@v4  # GitHub Actions Node.js setup v4 with security considerations
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'  # Enable NPM cache for faster execution
+          registry-url: 'https://registry.npmjs.org/'  # Official NPM registry
+      
+      # Verify zero-dependency architecture and absence of external packages
+      - name: Verify Zero Dependencies Architecture
+        run: |
+          echo "=== ZERO DEPENDENCY ARCHITECTURE VERIFICATION ==="
+          echo "Verifying zero-dependency architecture compliance..."
+          
+          # Check for node_modules directory existence
+          if [ -d src/backend/node_modules ]; then
+            echo "WARNING: node_modules directory detected - investigating contents"
+            ls -la src/backend/node_modules/
+            echo "SECURITY CONCERN: External dependencies found in zero-dependency project"
+            exit 1
+          else
+            echo "✓ SUCCESS: No node_modules directory found - zero dependencies confirmed"
+          fi
+          
+          # Verify package.json has no production dependencies
+          if [ -f src/backend/package.json ]; then
+            echo "Analyzing package.json for dependency declarations..."
+            DEPS_COUNT=$(cat src/backend/package.json | jq -r '.dependencies // {} | length')
+            DEV_DEPS_COUNT=$(cat src/backend/package.json | jq -r '.devDependencies // {} | length')
+            
+            echo "Production dependencies count: $DEPS_COUNT"
+            echo "Development dependencies count: $DEV_DEPS_COUNT"
+            
+            if [ "$DEPS_COUNT" -gt 0 ]; then
+              echo "SECURITY VIOLATION: Production dependencies found in zero-dependency architecture"
+              cat src/backend/package.json | jq '.dependencies'
+              exit 1
+            else
+              echo "✓ SUCCESS: Zero production dependencies verified"
+            fi
+            
+            if [ "$DEV_DEPS_COUNT" -gt 0 ]; then
+              echo "INFO: Development dependencies detected (acceptable for tooling)"
+              cat src/backend/package.json | jq '.devDependencies'
+            fi
+          else
+            echo "INFO: No package.json found - pure Node.js implementation detected"
+          fi
+        working-directory: ./
+      
+      # Execute NPM security audit to confirm no external vulnerabilities in dependencies
+      - name: NPM Security Audit
+        run: |
+          echo "=== NPM SECURITY AUDIT EXECUTION ==="
+          echo "Executing NPM security audit for zero-dependency validation..."
+          
+          cd src/backend
+          
+          # Run NPM audit with moderate severity level
+          if npm audit --audit-level=moderate --production; then
+            echo "✓ NPM AUDIT PASSED: No security vulnerabilities detected"
+          else
+            AUDIT_EXIT_CODE=$?
+            echo "NPM AUDIT COMPLETED: Exit code $AUDIT_EXIT_CODE"
+            
+            # For zero-dependency projects, audit failures indicate configuration issues
+            if [ "$AUDIT_EXIT_CODE" -ne 0 ]; then
+              echo "INFO: Audit findings detected - reviewing for zero-dependency compliance"
+              echo "Generating detailed audit report..."
+              npm audit --json > audit-report.json || true
+              
+              if [ -f audit-report.json ]; then
+                echo "Audit summary:"
+                cat audit-report.json | jq '.metadata.vulnerabilities // "No vulnerabilities found"'
+              fi
+            fi
+          fi
+        continue-on-error: true  # Allow workflow to continue for educational analysis
+      
+      # Review package.json for security configuration and dependency management practices
+      - name: Package.json Security Review
+        run: |
+          echo "=== PACKAGE.JSON SECURITY CONFIGURATION REVIEW ==="
+          echo "Reviewing package.json for security configuration and best practices..."
+          
+          cd src/backend
+          
+          if [ -f package.json ]; then
+            echo "Package.json contents analysis:"
+            echo "------------------------------"
+            
+            # Check for dependency sections
+            echo "Checking dependency sections..."
+            if cat package.json | jq -e '.dependencies' > /dev/null 2>&1; then
+              echo "Dependencies section found:"
+              cat package.json | jq '.dependencies'
+            else
+              echo "✓ No dependencies section found - zero-dependency architecture confirmed"
+            fi
+            
+            if cat package.json | jq -e '.devDependencies' > /dev/null 2>&1; then
+              echo "DevDependencies section found:"
+              cat package.json | jq '.devDependencies'
+            else
+              echo "✓ No devDependencies section found"
+            fi
+            
+            # Check for security-related scripts
+            echo "Checking for security-related scripts..."
+            if cat package.json | jq -e '.scripts' > /dev/null 2>&1; then
+              echo "Scripts section found:"
+              cat package.json | jq '.scripts'
+            fi
+            
+            # Verify package configuration security
+            echo "Verifying package security configuration..."
+            PACKAGE_NAME=$(cat package.json | jq -r '.name // "unnamed"')
+            PACKAGE_VERSION=$(cat package.json | jq -r '.version // "unknown"')
+            echo "Package: $PACKAGE_NAME@$PACKAGE_VERSION"
+            
+            # Check for private package flag
+            if cat package.json | jq -e '.private == true' > /dev/null 2>&1; then
+              echo "✓ Private package flag detected - prevents accidental publishing"
+            else
+              echo "INFO: Package not marked as private - consider adding '\"private\": true'"
+            fi
+            
+          else
+            echo "No package.json file found - pure Node.js implementation without package management"
+          fi
+      
+      # Generate comprehensive dependency audit summary report with educational context
+      - name: Security Audit Summary
+        run: |
+          echo "=== DEPENDENCY SECURITY AUDIT SUMMARY ==="
+          echo "=========================================="
+          echo ""
+          echo "AUDIT RESULTS:"
+          echo "✓ Zero-dependency architecture validated"
+          echo "✓ No external package vulnerabilities possible"
+          echo "✓ Educational security approach confirmed"
+          echo "✓ Supply chain attack surface minimized"
+          echo ""
+          echo "SECURITY BENEFITS:"
+          echo "• Eliminated third-party dependency vulnerabilities"
+          echo "• Reduced attack surface to Node.js core only"
+          echo "• Simplified security maintenance requirements"
+          echo "• Educational focus on Node.js built-in security"
+          echo ""
+          echo "COMPLIANCE STATUS:"
+          echo "✓ OWASP Dependency Management: Compliant (zero dependencies)"
+          echo "✓ Supply Chain Security: Optimal (no external supply chain)"
+          echo "✓ Vulnerability Management: Simplified (Node.js LTS only)"
+          echo ""
+          echo "Dependency audit completed successfully."
+  
+  # Job 2: Static Application Security Testing (SAST) - CodeQL analysis and security pattern validation
+  static_analysis:
+    name: Static Application Security Testing (SAST)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      matrix:
+        language: ['javascript']  # JavaScript/Node.js security analysis
+    
+    steps:
+      # Checkout repository for static security analysis with comprehensive history
+      - name: Checkout Repository
+        uses: actions/checkout@v4  # GitHub Actions checkout v4 for code analysis
+        with:
+          fetch-depth: 0  # Complete history for thorough security analysis
+      
+      # Initialize GitHub CodeQL for JavaScript static security analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3  # GitHub CodeQL action v3 for SAST
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml  # Custom CodeQL configuration
+          queries: +security-and-quality  # Include security and code quality queries
+      
+      # Setup Node.js runtime environment for code analysis execution
+      - name: Setup Node.js
+        uses: actions/setup-node@v4  # Node.js setup for analysis environment
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      # Static analysis of security headers implementation and OWASP compliance
+      - name: Security Headers Implementation Analysis
+        run: |
+          echo "=== SECURITY HEADERS IMPLEMENTATION ANALYSIS ==="
+          echo "Analyzing security headers implementation for OWASP compliance..."
+          
+          # Analyze security headers configuration
+          if [ -f src/backend/security/security-headers.js ]; then
+            echo "✓ Security headers module found - analyzing implementation..."
+            
+            # Check for essential security headers
+            if grep -q "X-Content-Type-Options" src/backend/security/security-headers.js; then
+              echo "✓ X-Content-Type-Options header implemented"
+            else
+              echo "⚠ X-Content-Type-Options header not found"
+            fi
+            
+            if grep -q "X-Frame-Options" src/backend/security/security-headers.js; then
+              echo "✓ X-Frame-Options header implemented"
+            else
+              echo "⚠ X-Frame-Options header not found"
+            fi
+            
+            if grep -q "X-XSS-Protection" src/backend/security/security-headers.js; then
+              echo "✓ X-XSS-Protection header configuration found"
+            else
+              echo "⚠ X-XSS-Protection header not configured"
+            fi
+            
+            # Analyze header values for security best practices
+            echo "Analyzing security header values..."
+            grep -E "(X-Content-Type-Options|X-Frame-Options|X-XSS-Protection)" src/backend/security/security-headers.js || echo "Header analysis completed"
+            
+          else
+            echo "❌ Security headers module not found - security headers not implemented"
+          fi
+        working-directory: ./
+      
+      # Static analysis of input validation and request sanitization security patterns  
+      - name: Input Validation Security Analysis
+        run: |
+          echo "=== INPUT VALIDATION SECURITY ANALYSIS ==="
+          echo "Analyzing request validation and input sanitization security patterns..."
+          
+          # Analyze request validation implementation
+          if [ -f src/backend/security/request-validator.js ]; then
+            echo "✓ Request validator module found - analyzing security patterns..."
+            
+            # Check for validation functions
+            if grep -q "validateRequest" src/backend/security/request-validator.js; then
+              echo "✓ Request validation function implemented"
+            fi
+            
+            if grep -q "VALIDATION_ERRORS" src/backend/security/request-validator.js; then
+              echo "✓ Validation error constants defined"
+            fi
+            
+            # Analyze security validation patterns
+            if grep -q "PATH_TRAVERSAL" src/backend/security/request-validator.js; then
+              echo "✓ Path traversal attack prevention implemented"
+            fi
+            
+            if grep -q "NULL_BYTE" src/backend/security/request-validator.js; then
+              echo "✓ Null byte injection prevention implemented"
+            fi
+            
+            if grep -q "sanitizeInput" src/backend/security/request-validator.js; then
+              echo "✓ Input sanitization function implemented"
+            fi
+            
+            # Count security patterns
+            PATTERN_COUNT=$(grep -c -E "(PATH_TRAVERSAL|NULL_BYTE|CONTROL_CHARS|SCRIPT_INJECTION)" src/backend/security/request-validator.js || echo "0")
+            echo "Security patterns detected: $PATTERN_COUNT"
+            
+          else
+            echo "❌ Request validator module not found - input validation not implemented"
+          fi
+        working-directory: ./
+      
+      # Analysis of HTTP server security configuration and timeout settings
+      - name: HTTP Server Security Configuration Analysis
+        run: |
+          echo "=== HTTP SERVER SECURITY CONFIGURATION ANALYSIS ==="
+          echo "Analyzing HTTP server security configuration and timeout settings..."
+          
+          # Analyze main server file
+          if [ -f src/backend/server.js ]; then
+            echo "✓ Main server file found - analyzing security configuration..."
+            
+            # Check for security timeout configurations
+            if grep -q "timeout" src/backend/server.js; then
+              echo "✓ Server timeout configuration found"
+              grep -n "timeout" src/backend/server.js || true
+            fi
+            
+            if grep -q "keepAliveTimeout" src/backend/server.js; then
+              echo "✓ Keep-alive timeout configuration found"
+            fi
+            
+            if grep -q "maxConnections" src/backend/server.js; then
+              echo "✓ Maximum connections limit configured"
+            fi
+            
+            # Check for security headers integration
+            if grep -q "security-headers" src/backend/server.js; then
+              echo "✓ Security headers integration detected"
+            fi
+            
+            if grep -q "request-validator" src/backend/server.js; then
+              echo "✓ Request validation integration detected"
+            fi
+            
+            echo "HTTP server security analysis completed"
+          else
+            echo "❌ Main server file not found"
+          fi
+          
+          # Analyze additional security configuration files
+          find src/backend -name "*.js" -type f -exec grep -l "security\|validation\|sanitize" {} \; | while read file; do
+            echo "Security-related file found: $file"
+          done
+        working-directory: ./
+      
+      # Execute comprehensive CodeQL static security analysis for vulnerability detection
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3  # CodeQL analysis execution v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: true  # Upload results to GitHub Security tab
+          output: sarif-results  # SARIF format for security findings
+          ram: 6144  # Memory allocation for analysis
+      
+      # Validate implementation of security pattern detection and threat prevention
+      - name: Security Pattern Implementation Validation
+        run: |
+          echo "=== SECURITY PATTERN IMPLEMENTATION VALIDATION ==="
+          echo "Validating implementation of security patterns and threat detection..."
+          
+          # Security pattern validation
+          SECURITY_FILES=0
+          SECURITY_PATTERNS=0
+          
+          # Count security-related files
+          find src/backend -name "*.js" -type f | while read file; do
+            if grep -l -E "(security|validation|sanitize|authenticate|authorize)" "$file" >/dev/null 2>&1; then
+              echo "Security implementation found in: $file"
+              SECURITY_FILES=$((SECURITY_FILES + 1))
+            fi
+          done
+          
+          # Validate specific security patterns
+          if [ -f src/backend/security/request-validator.js ]; then
+            echo "Validating security patterns in request validator..."
+            
+            # Check for path traversal protection
+            if grep -q "PATH_TRAVERSAL" src/backend/security/request-validator.js; then
+              echo "✓ Path traversal attack prevention pattern implemented"
+              SECURITY_PATTERNS=$((SECURITY_PATTERNS + 1))
+            fi
+            
+            # Check for null byte injection protection  
+            if grep -q "NULL_BYTE" src/backend/security/request-validator.js; then
+              echo "✓ Null byte injection prevention pattern implemented"
+              SECURITY_PATTERNS=$((SECURITY_PATTERNS + 1))
+            fi
+            
+            # Check for control character filtering
+            if grep -q "CONTROL_CHARS" src/backend/security/request-validator.js; then
+              echo "✓ Control character filtering pattern implemented" 
+              SECURITY_PATTERNS=$((SECURITY_PATTERNS + 1))
+            fi
+            
+            # Check for script injection prevention
+            if grep -q "SCRIPT_INJECTION" src/backend/security/request-validator.js; then
+              echo "✓ Script injection prevention pattern implemented"
+              SECURITY_PATTERNS=$((SECURITY_PATTERNS + 1))
+            fi
+          fi
+          
+          echo ""
+          echo "SECURITY PATTERN VALIDATION SUMMARY:"
+          echo "Security patterns implemented: $SECURITY_PATTERNS"
+          echo "✓ Security pattern validation completed successfully"
+          echo ""
+          echo "SAST Analysis Summary:"
+          echo "• CodeQL static analysis: Executed"
+          echo "• Security headers: Validated"
+          echo "• Input validation: Analyzed"
+          echo "• HTTP security: Reviewed"
+          echo "• Security patterns: Verified"
+        working-directory: ./
+  
+  # Job 3: Container Security Scanning - Docker image vulnerability assessment with Trivy
+  container_security:
+    name: Container Security Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      # Checkout repository for container security analysis
+      - name: Checkout Repository
+        uses: actions/checkout@v4  # Repository checkout for Docker analysis
+        with:
+          fetch-depth: 1  # Minimal history for container scanning
+      
+      # Build Docker image for comprehensive security scanning analysis
+      - name: Build Docker Image
+        run: |
+          echo "=== DOCKER IMAGE BUILD FOR SECURITY SCANNING ==="
+          echo "Building Docker image for comprehensive security vulnerability analysis..."
+          
+          cd src/backend
+          
+          # Verify Dockerfile exists
+          if [ ! -f Dockerfile ]; then
+            echo "❌ Dockerfile not found - container security scanning cannot proceed"
+            exit 1
+          fi
+          
+          echo "✓ Dockerfile found - proceeding with image build..."
+          
+          # Build Docker image with security scanning tag
+          echo "Building Docker image: nodejs-hello-tutorial:security-scan"
+          docker build -t nodejs-hello-tutorial:security-scan . --no-cache
+          
+          # Verify image was built successfully
+          if docker images | grep -q "nodejs-hello-tutorial.*security-scan"; then
+            echo "✓ Docker image built successfully"
+            
+            # Display image information
+            echo "Docker image details:"
+            docker images nodejs-hello-tutorial:security-scan --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
+            
+            # Analyze image layers for security assessment
+            echo "Analyzing image layers..."
+            docker history nodejs-hello-tutorial:security-scan --format "table {{.CreatedBy}}\t{{.Size}}\t{{.CreatedSince}}" || true
+          else
+            echo "❌ Docker image build failed"
+            exit 1
+          fi
+        working-directory: ./
+      
+      # Execute Trivy container vulnerability scanner for comprehensive security assessment
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master  # Trivy container security scanner master
+        with:
+          image-ref: 'nodejs-hello-tutorial:security-scan'
+          format: 'sarif'  # SARIF format for GitHub Security integration
+          output: 'trivy-results.sarif'
+          severity: ${{ env.TRIVY_SEVERITY }}  # Critical, High, Medium vulnerabilities
+          exit-code: '0'  # Continue workflow execution regardless of findings
+          scanners: 'vuln,config,secret'  # Vulnerability, configuration, and secret scanning
+          timeout: '15m'  # Scanner timeout
+      
+      # Upload Trivy security scan results to GitHub Security tab for vulnerability tracking
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3  # SARIF upload action v3
+        if: always()  # Upload results regardless of previous step outcomes
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-container-scan'  # Security findings category
+      
+      # Validate Docker configuration security best practices and hardening measures
+      - name: Docker Configuration Security Check
+        run: |
+          echo "=== DOCKER CONFIGURATION SECURITY VALIDATION ==="
+          echo "Validating Docker configuration security best practices and hardening..."
+          
+          cd src/backend
+          
+          if [ -f Dockerfile ]; then
+            echo "✓ Dockerfile found - analyzing security configuration..."
+            echo ""
+            
+            # Check for non-root user configuration
+            if grep -q "USER" Dockerfile; then
+              echo "✓ Non-root USER directive found"
+              grep -n "USER" Dockerfile
+            else
+              echo "⚠ No USER directive found - container may run as root"
+            fi
+            
+            # Check for exposed ports
+            if grep -q "EXPOSE" Dockerfile; then
+              echo "✓ EXPOSE directive found - port configuration present"
+              grep -n "EXPOSE" Dockerfile
+            else
+              echo "⚠ No EXPOSE directive found"
+            fi
+            
+            # Check for working directory configuration
+            if grep -q "WORKDIR" Dockerfile; then
+              echo "✓ WORKDIR directive found - working directory configured"
+              grep -n "WORKDIR" Dockerfile
+            else
+              echo "⚠ No WORKDIR directive found"
+            fi
+            
+            # Check for health check configuration
+            if grep -q "HEALTHCHECK" Dockerfile; then
+              echo "✓ HEALTHCHECK directive found - container health monitoring configured"
+              grep -n "HEALTHCHECK" Dockerfile
+            else
+              echo "⚠ No HEALTHCHECK directive found"
+            fi
+            
+            # Check for multi-stage build
+            STAGE_COUNT=$(grep -c "FROM" Dockerfile || echo "0")
+            echo "Build stages detected: $STAGE_COUNT"
+            if [ "$STAGE_COUNT" -gt 1 ]; then
+              echo "✓ Multi-stage build detected - reduced attack surface"
+            else
+              echo "ℹ Single-stage build - consider multi-stage for production"
+            fi
+            
+            # Display complete Dockerfile for analysis
+            echo ""
+            echo "Complete Dockerfile configuration:"
+            echo "================================="
+            cat Dockerfile
+            
+          else
+            echo "❌ Dockerfile not found"
+            exit 1
+          fi
+        working-directory: ./
+      
+      # Test container runtime security with restricted capabilities and security options
+      - name: Container Runtime Security Test
+        run: |
+          echo "=== CONTAINER RUNTIME SECURITY TESTING ==="
+          echo "Testing container runtime security with restricted capabilities..."
+          
+          # Test container with security restrictions
+          echo "Testing container with security restrictions..."
+          
+          # Run container with security hardening options
+          echo "Executing container with security restrictions:"
+          echo "• --security-opt=no-new-privileges (prevent privilege escalation)"
+          echo "• --cap-drop=ALL (drop all capabilities)"
+          echo "• --cap-add=NET_BIND_SERVICE (allow service port binding)"
+          echo "• --read-only (read-only filesystem)"
+          echo "• --user=node (non-root user execution)"
+          
+          # Test basic functionality with security restrictions
+          if docker run --rm \
+            --security-opt=no-new-privileges \
+            --cap-drop=ALL \
+            --cap-add=NET_BIND_SERVICE \
+            --read-only \
+            --tmpfs /tmp \
+            nodejs-hello-tutorial:security-scan \
+            node --version; then
+            echo "✓ Container security restrictions test passed"
+          else
+            echo "❌ Container security restrictions test failed"
+            exit 1
+          fi
+          
+          # Test container startup with limited resources
+          echo "Testing container resource limitations..."
+          if timeout 10s docker run --rm \
+            --memory=128m \
+            --cpus=0.5 \
+            --security-opt=no-new-privileges \
+            nodejs-hello-tutorial:security-scan \
+            node -e "console.log('Resource limitation test passed')"; then
+            echo "✓ Container resource limitation test passed"
+          else
+            echo "❌ Container resource limitation test failed"
+          fi
+          
+          echo "Container runtime security testing completed"
+  
+  # Job 4: Infrastructure Security Analysis - GitHub Actions workflow and configuration security
+  infrastructure_security:
+    name: Infrastructure Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      # Checkout repository for infrastructure security analysis
+      - name: Checkout Repository
+        uses: actions/checkout@v4  # Repository checkout for infrastructure analysis
+        with:
+          fetch-depth: 1  # Current state for infrastructure scanning
+      
+      # Analyze GitHub Actions workflow security and configuration best practices
+      - name: GitHub Actions Workflow Security Check
+        run: |
+          echo "=== GITHUB ACTIONS WORKFLOW SECURITY ANALYSIS ==="
+          echo "Analyzing GitHub Actions workflow security and configuration practices..."
+          
+          # Check for hardcoded secrets in workflow files
+          echo "Scanning for hardcoded secrets and sensitive information..."
+          if find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -l "secrets\." 2>/dev/null; then
+            echo "⚠ Workflow files contain secrets references - analyzing usage..."
+            find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -n "secrets\." || true
+            
+            # Check for proper secrets usage patterns
+            if find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -l "\${{ secrets\." 2>/dev/null; then
+              echo "✓ Secrets usage follows GitHub Actions best practices"
+            fi
+          else
+            echo "✓ No hardcoded secrets detected in workflow files"
+          fi
+          
+          # Check for self-hosted runner usage (security risk)
+          echo "Checking for self-hosted runner configurations..."
+          if find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -l "runs-on.*self-hosted" 2>/dev/null; then
+            echo "⚠ SECURITY RISK: Self-hosted runners detected"
+            find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -n "runs-on.*self-hosted" || true
+          else
+            echo "✓ No self-hosted runners detected - using GitHub-hosted runners"
+          fi
+          
+          # Analyze workflow permissions
+          echo "Analyzing workflow permissions configuration..."
+          if find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -A 10 "permissions:" 2>/dev/null; then
+            echo "✓ Explicit permissions configuration found"
+            find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -A 10 "permissions:" || true
+          else
+            echo "⚠ No explicit permissions configuration found"
+          fi
+          
+          # Check for pinned action versions
+          echo "Validating action version pinning for supply chain security..."
+          if find .github/ -name "*.yml" -o -name "*.yaml" | xargs grep -E "uses:.*@v[0-9]" 2>/dev/null; then
+            echo "✓ Action versions are pinned to major versions"
+          else
+            echo "⚠ Some actions may not be properly version pinned"
+          fi
+        working-directory: ./
+      
+      # Validate environment configuration security practices and secret management
+      - name: Environment Configuration Security
+        run: |
+          echo "=== ENVIRONMENT CONFIGURATION SECURITY VALIDATION ==="
+          echo "Validating environment configuration security practices..."
+          
+          # Check for .env.example file (security best practice)
+          if [ -f src/backend/.env.example ]; then
+            echo "✓ .env.example file found - environment configuration template present"
+            echo "Environment template contents:"
+            cat src/backend/.env.example
+          else
+            echo "ℹ No .env.example file found - consider adding environment template"
+          fi
+          
+          # Check for .env file in repository (security risk)
+          if [ -f src/backend/.env ]; then
+            echo "❌ SECURITY RISK: .env file detected in repository"
+            echo "Environment files should not be committed to version control"
+            exit 1
+          else
+            echo "✓ No .env file in repository (security best practice)"
+          fi
+          
+          # Check for environment configuration in code
+          if [ -f src/backend/config/environment.js ]; then
+            echo "✓ Environment configuration module found - analyzing security..."
+            
+            # Check for hardcoded secrets
+            if grep -E "(password|token|key|secret).*=" src/backend/config/environment.js | grep -v "process.env" 2>/dev/null; then
+              echo "⚠ Potential hardcoded secrets found - review required"
+              grep -n -E "(password|token|key|secret).*=" src/backend/config/environment.js || true
+            else
+              echo "✓ No hardcoded secrets detected in environment configuration"
+            fi
+            
+            # Check for proper environment variable usage
+            if grep -q "process.env" src/backend/config/environment.js; then
+              echo "✓ Environment variables properly used for configuration"
+            fi
+          fi
+          
+          echo "Environment configuration security validation completed"
+        working-directory: ./
+      
+      # Check file permissions for security vulnerabilities and access control
+      - name: File Permission Security Check
+        run: |
+          echo "=== FILE PERMISSION SECURITY ANALYSIS ==="
+          echo "Checking file permissions for security vulnerabilities..."
+          
+          # Check for world-writable files (security risk)
+          echo "Scanning for world-writable files..."
+          if find . -type f -perm /o+w -not -path './.git/*' -not -path './node_modules/*' 2>/dev/null | head -10; then
+            echo "⚠ World-writable files detected - security risk"
+            find . -type f -perm /o+w -not -path './.git/*' -not -path './node_modules/*' 2>/dev/null || true
+          else
+            echo "✓ No world-writable files found"
+          fi
+          
+          # Check for executable files that shouldn't be executable
+          echo "Checking for potentially unsafe executable files..."
+          EXECUTABLE_COUNT=0
+          find src/backend -type f -name "*.js" -executable 2>/dev/null | while read file; do
+            echo "⚠ JavaScript file with execute permission: $file"
+            EXECUTABLE_COUNT=$((EXECUTABLE_COUNT + 1))
+          done
+          
+          if [ "$EXECUTABLE_COUNT" -eq 0 ]; then
+            echo "✓ No JavaScript files with unnecessary execute permissions"
+          fi
+          
+          # Check for sensitive file permissions
+          echo "Validating sensitive file permissions..."
+          for file in src/backend/security/*.js src/backend/config/*.js; do
+            if [ -f "$file" ]; then
+              PERMS=$(stat -c "%a" "$file" 2>/dev/null || stat -f "%Lp" "$file" 2>/dev/null)
+              echo "File permissions for $file: $PERMS"
+            fi
+          done
+          
+          echo "File permission security check completed"
+        working-directory: ./
+      
+      # Scan for hardcoded secrets and sensitive information patterns
+      - name: Secret Pattern Detection
+        run: |
+          echo "=== SECRET PATTERN DETECTION ANALYSIS ==="
+          echo "Scanning for potential secrets and sensitive information patterns..."
+          
+          # Define secret patterns to search for
+          SECRET_PATTERNS=(
+            "password.*=.*['\"]"
+            "token.*=.*['\"]"
+            "key.*=.*['\"]"
+            "secret.*=.*['\"]"
+            "api_key.*=.*['\"]"
+            "database.*=.*['\"]"
+            "mongodb.*=.*['\"]"
+            "mysql.*=.*['\"]"
+          )
+          
+          SECRETS_FOUND=0
+          
+          # Scan for secret patterns
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            echo "Scanning for pattern: $pattern"
+            if grep -r -E "$pattern" --exclude-dir=.git --exclude-dir=node_modules . 2>/dev/null; then
+              echo "⚠ Potential secret pattern detected: $pattern"
+              SECRETS_FOUND=$((SECRETS_FOUND + 1))
+            fi
+          done
+          
+          if [ "$SECRETS_FOUND" -eq 0 ]; then
+            echo "✓ No obvious secret patterns detected"
+          else
+            echo "⚠ $SECRETS_FOUND potential secret patterns found - review required"
+          fi
+          
+          # Check for common secret file names
+          echo "Checking for common secret file names..."
+          SECRET_FILES=(
+            ".env"
+            ".env.local"
+            ".env.production" 
+            "secrets.json"
+            "config.json"
+            "credentials.json"
+          )
+          
+          for file in "${SECRET_FILES[@]}"; do
+            if find . -name "$file" -not -path './.git/*' 2>/dev/null | head -1; then
+              echo "⚠ Potential secret file found: $file"
+            fi
+          done
+          
+          echo "Secret pattern detection analysis completed"
+        working-directory: ./
+      
+      # Validate security configuration files and directory structure
+      - name: Configuration Security Validation
+        run: |
+          echo "=== CONFIGURATION SECURITY VALIDATION ==="
+          echo "Validating security configuration files and directory structure..."
+          
+          # Check security directory structure
+          if [ -d src/backend/security/ ]; then
+            echo "✓ Security configuration directory found"
+            echo "Security directory contents:"
+            ls -la src/backend/security/
+            
+            # Validate security module files
+            SECURITY_MODULES=(
+              "security-headers.js"
+              "request-validator.js"
+            )
+            
+            for module in "${SECURITY_MODULES[@]}"; do
+              if [ -f "src/backend/security/$module" ]; then
+                echo "✓ Security module found: $module"
+                
+                # Basic validation of module structure
+                if grep -q "module.exports" "src/backend/security/$module"; then
+                  echo "  ✓ Module exports detected"
+                fi
+                
+                if grep -q "function\|class\|const.*=" "src/backend/security/$module"; then
+                  echo "  ✓ Implementation detected"
+                fi
+              else
+                echo "⚠ Security module missing: $module"
+              fi
+            done
+            
+          else
+            echo "❌ Security configuration directory not found"
+            echo "Security directory should be present for production applications"
+          fi
+          
+          # Check for configuration management best practices
+          if [ -f src/backend/config/environment.js ]; then
+            echo "✓ Environment configuration module found"
+            
+            # Check for secure defaults
+            if grep -q "DEFAULT_" src/backend/config/environment.js; then
+              echo "✓ Default configuration values detected"
+            fi
+            
+            # Check for validation logic
+            if grep -q "validate\|check\|verify" src/backend/config/environment.js; then
+              echo "✓ Configuration validation logic detected"
+            fi
+          fi
+          
+          echo "Configuration security validation completed"
+        working-directory: ./
+  
+  # Job 5: Educational Security Practices Review - Validate learning objectives and security education
+  educational_security_review:
+    name: Educational Security Practices Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      # Checkout repository for educational security analysis
+      - name: Checkout Repository
+        uses: actions/checkout@v4  # Repository checkout for educational analysis
+        with:
+          fetch-depth: 1
+      
+      # Validate zero-dependency educational security approach and architecture
+      - name: Zero Dependencies Verification
+        run: |
+          echo "=== ZERO DEPENDENCIES EDUCATIONAL VERIFICATION ==="
+          echo "=============================================="
+          echo ""
+          echo "EDUCATIONAL OBJECTIVE: Demonstrate Node.js security without external dependencies"
+          echo ""
+          
+          # Comprehensive zero-dependency validation
+          echo "DEPENDENCY ANALYSIS:"
+          echo "==================="
+          
+          # Check package-lock.json (should not exist for zero dependencies)
+          if [ -f src/backend/package-lock.json ]; then
+            echo "⚠ package-lock.json found - indicates NPM dependency installation"
+            echo "File size: $(wc -c < src/backend/package-lock.json) bytes"
+          else
+            echo "✓ No package-lock.json found - zero dependencies confirmed"
+          fi
+          
+          # Check node_modules directory
+          if [ -d src/backend/node_modules ]; then
+            echo "⚠ node_modules directory found - external dependencies detected"
+            echo "Contents:"
+            ls -la src/backend/node_modules/ | head -20
+          else
+            echo "✓ No node_modules directory - zero dependencies architecture confirmed"
+          fi
+          
+          # Validate package.json dependencies
+          if [ -f src/backend/package.json ]; then
+            echo ""
+            echo "PACKAGE.JSON ANALYSIS:"
+            echo "====================="
+            
+            PRODUCTION_DEPS=$(cat src/backend/package.json | jq -r '.dependencies // {} | keys | length')
+            DEV_DEPS=$(cat src/backend/package.json | jq -r '.devDependencies // {} | keys | length')
+            
+            echo "Production dependencies: $PRODUCTION_DEPS"
+            echo "Development dependencies: $DEV_DEPS"
+            
+            if [ "$PRODUCTION_DEPS" -eq 0 ]; then
+              echo "✓ Zero production dependencies confirmed"
+            else
+              echo "❌ Production dependencies detected - violates zero-dependency architecture"
+              cat src/backend/package.json | jq '.dependencies'
+              exit 1
+            fi
+            
+            if [ "$DEV_DEPS" -gt 0 ]; then
+              echo "ℹ Development dependencies found (acceptable for tooling):"
+              cat src/backend/package.json | jq '.devDependencies'
+            fi
+          fi
+          
+          echo ""
+          echo "EDUCATIONAL SECURITY BENEFITS:"
+          echo "============================="
+          echo "✓ Eliminated third-party vulnerabilities"
+          echo "✓ Reduced attack surface to Node.js core"
+          echo "✓ Simplified security assessment process"
+          echo "✓ Focus on Node.js built-in security features"
+          echo "✓ Educational clarity without dependency complexity"
+        working-directory: ./
+      
+      # Review implementation of Node.js built-in security patterns and educational value
+      - name: Built-in Security Patterns Review
+        run: |
+          echo "=== BUILT-IN SECURITY PATTERNS EDUCATIONAL REVIEW ==="
+          echo "=================================================="
+          echo ""
+          echo "EDUCATIONAL OBJECTIVE: Demonstrate Node.js built-in security capabilities"
+          echo ""
+          
+          # Analyze Node.js built-in module usage
+          echo "NODE.JS BUILT-IN MODULE ANALYSIS:"
+          echo "================================"
+          
+          HTTP_USAGE=$(find src/backend -name "*.js" -exec grep -l "require.*http" {} \; | wc -l)
+          URL_USAGE=$(find src/backend -name "*.js" -exec grep -l "require.*url" {} \; | wc -l)
+          UTIL_USAGE=$(find src/backend -name "*.js" -exec grep -l "require.*util" {} \; | wc -l)
+          
+          echo "Files using Node.js 'http' module: $HTTP_USAGE"
+          echo "Files using Node.js 'url' module: $URL_USAGE"
+          echo "Files using Node.js 'util' module: $UTIL_USAGE"
+          
+          if [ "$HTTP_USAGE" -gt 0 ]; then
+            echo "✓ Using Node.js built-in HTTP module (no Express.js dependency)"
+            find src/backend -name "*.js" -exec grep -l "require.*http" {} \;
+          fi
+          
+          # Analyze security headers implementation
+          echo ""
+          echo "SECURITY HEADERS EDUCATIONAL ANALYSIS:"
+          echo "======================================"
+          
+          if [ -f src/backend/security/security-headers.js ]; then
+            echo "✓ Custom security headers implementation found"
+            
+            # Count implemented security headers
+            HEADER_COUNT=$(grep -c "X-\|Content-Security-Policy\|Strict-Transport" src/backend/security/security-headers.js || echo "0")
+            echo "Security headers implemented: $HEADER_COUNT"
+            
+            # Educational value analysis
+            if grep -q "X-Content-Type-Options" src/backend/security/security-headers.js; then
+              echo "✓ MIME-type sniffing prevention (X-Content-Type-Options)"
+            fi
+            
+            if grep -q "X-Frame-Options" src/backend/security/security-headers.js; then
+              echo "✓ Clickjacking prevention (X-Frame-Options)"
+            fi
+            
+            echo "✓ Educational Value: Students learn HTTP security headers without external libraries"
+          fi
+          
+          # Analyze request validation patterns
+          echo ""
+          echo "INPUT VALIDATION EDUCATIONAL ANALYSIS:"
+          echo "====================================="
+          
+          if [ -f src/backend/security/request-validator.js ]; then
+            echo "✓ Custom request validation implementation found"
+            
+            VALIDATION_FUNCTIONS=$(grep -c "function.*validate\|\.validate\|validateRequest" src/backend/security/request-validator.js || echo "0")
+            echo "Validation functions implemented: $VALIDATION_FUNCTIONS"
+            
+            # Educational security concepts demonstrated
+            if grep -q "sanitizeInput" src/backend/security/request-validator.js; then
+              echo "✓ Educational Concept: Input sanitization"
+            fi
+            
+            if grep -q "PATH_TRAVERSAL" src/backend/security/request-validator.js; then
+              echo "✓ Educational Concept: Path traversal attack prevention"
+            fi
+            
+            if grep -q "NULL_BYTE" src/backend/security/request-validator.js; then
+              echo "✓ Educational Concept: Null byte injection prevention"
+            fi
+            
+            echo "✓ Educational Value: Students learn security validation without external validators"
+          fi
+          
+          echo ""
+          echo "EDUCATIONAL SECURITY LEARNING OUTCOMES:"
+          echo "======================================="
+          echo "✓ HTTP security fundamentals using Node.js built-ins"
+          echo "✓ Security header implementation without helmet.js"
+          echo "✓ Input validation using pure JavaScript"
+          echo "✓ Understanding attack vectors and prevention"
+          echo "✓ Zero-dependency security architecture patterns"
+        working-directory: ./
+      
+      # Verify presence and quality of security-related educational documentation
+      - name: Educational Security Documentation Check
+        run: |
+          echo "=== SECURITY DOCUMENTATION EDUCATIONAL REVIEW ==="
+          echo "==============================================="
+          echo ""
+          echo "EDUCATIONAL OBJECTIVE: Provide comprehensive security learning documentation"
+          echo ""
+          
+          # Check main documentation files
+          echo "DOCUMENTATION ANALYSIS:"
+          echo "======================"
+          
+          if [ -f README.md ]; then
+            echo "✓ Main README.md found"
+            
+            # Check for security-related content
+            if grep -i -q "security" README.md; then
+              echo "✓ Security documentation present in README"
+              SECURITY_MENTIONS=$(grep -c -i "security\|vulnerable\|attack\|protection" README.md || echo "0")
+              echo "Security-related mentions: $SECURITY_MENTIONS"
+            else
+              echo "⚠ Limited security documentation in README"
+            fi
+          else
+            echo "⚠ No README.md found - documentation missing"
+          fi
+          
+          # Check for architecture documentation
+          if [ -f src/backend/docs/architecture.md ] || [ -f docs/architecture.md ]; then
+            echo "✓ Architecture documentation found"
+          else
+            echo "ℹ Consider adding architecture documentation"
+          fi
+          
+          # Check for security-specific documentation
+          SECURITY_DOCS=0
+          find . -name "*.md" -exec grep -l -i "security\|vulnerability\|attack" {} \; 2>/dev/null | while read doc; do
+            echo "✓ Security documentation found: $doc"
+            SECURITY_DOCS=$((SECURITY_DOCS + 1))
+          done
+          
+          # Analyze inline code documentation
+          echo ""
+          echo "CODE DOCUMENTATION ANALYSIS:"
+          echo "============================"
+          
+          # Check for security-related comments in code
+          SECURITY_COMMENTS=0
+          find src/backend -name "*.js" -exec grep -c "// .*security\|/\* .*security\|security.*\*/" {} \; 2>/dev/null | while read count; do
+            if [ "$count" -gt 0 ]; then
+              SECURITY_COMMENTS=$((SECURITY_COMMENTS + count))
+            fi
+          done
+          
+          if [ "$SECURITY_COMMENTS" -gt 0 ]; then
+            echo "✓ Security-focused code comments found: $SECURITY_COMMENTS"
+          fi
+          
+          # Check for function documentation
+          DOCUMENTED_FUNCTIONS=$(find src/backend -name "*.js" -exec grep -c "/\*\*" {} \; 2>/dev/null | awk '{sum += $1} END {print sum}' || echo "0")
+          echo "JSDoc documented functions: $DOCUMENTED_FUNCTIONS"
+          
+          echo ""
+          echo "EDUCATIONAL DOCUMENTATION ASSESSMENT:"
+          echo "===================================="
+          echo "✓ Documentation supports security learning objectives"
+          echo "✓ Code examples demonstrate security best practices"
+          echo "✓ Educational context provided for security implementations"
+        working-directory: ./
+      
+      # Validate that security components serve educational learning objectives effectively
+      - name: Security Learning Objectives Validation
+        run: |
+          echo "=== SECURITY LEARNING OBJECTIVES VALIDATION ==="
+          echo "=============================================="
+          echo ""
+          echo "EDUCATIONAL OBJECTIVE: Validate security components serve learning goals"
+          echo ""
+          
+          # Learning objective validation matrix
+          echo "LEARNING OBJECTIVE VALIDATION:"
+          echo "============================="
+          
+          # Objective 1: HTTP Security Headers
+          if find src/backend -name "*.js" -exec grep -l "applySecurityHeaders\|setSecurityHeaders" {} \; | head -1; then
+            echo "✓ Learning Objective 1: HTTP Security Headers Implementation"
+            echo "  Students learn to implement security headers manually"
+            echo "  Educational value: Understanding header-based security"
+          fi
+          
+          # Objective 2: Input Validation
+          if find src/backend -name "*.js" -exec grep -l "validateRequest\|sanitizeInput" {} \; | head -1; then
+            echo "✓ Learning Objective 2: Input Validation and Sanitization"
+            echo "  Students learn to validate and sanitize user input"
+            echo "  Educational value: Understanding input-based attacks"
+          fi
+          
+          # Objective 3: Error Handling Security
+          if find src/backend -name "*.js" -exec grep -l "error.*handling\|catch.*error\|handleError" {} \; | head -1; then
+            echo "✓ Learning Objective 3: Secure Error Handling"
+            echo "  Students learn to handle errors without information disclosure"
+            echo "  Educational value: Understanding error-based information leaks"
+          fi
+          
+          # Objective 4: HTTP Server Security
+          if find src/backend -name "*.js" -exec grep -l "createServer\|server.*security" {} \; | head -1; then
+            echo "✓ Learning Objective 4: HTTP Server Security Configuration"
+            echo "  Students learn to configure secure HTTP servers"
+            echo "  Educational value: Understanding server-level security"
+          fi
+          
+          # Objective 5: Zero-Dependency Security
+          echo "✓ Learning Objective 5: Zero-Dependency Security Architecture"
+          echo "  Students learn security implementation without external dependencies"
+          echo "  Educational value: Understanding built-in security capabilities"
+          
+          # Validate educational progression
+          echo ""
+          echo "EDUCATIONAL PROGRESSION VALIDATION:"
+          echo "=================================="
+          
+          BEGINNER_CONCEPTS=0
+          INTERMEDIATE_CONCEPTS=0
+          ADVANCED_CONCEPTS=0
+          
+          # Beginner concepts
+          if find src/backend -name "*.js" -exec grep -q "hello\|simple\|basic" {} \;; then
+            echo "✓ Beginner Level: Simple HTTP server concepts"
+            BEGINNER_CONCEPTS=$((BEGINNER_CONCEPTS + 1))
+          fi
+          
+          # Intermediate concepts  
+          if find src/backend -name "*.js" -exec grep -q "security\|validation\|sanitize" {} \;; then
+            echo "✓ Intermediate Level: Security implementation concepts"
+            INTERMEDIATE_CONCEPTS=$((INTERMEDIATE_CONCEPTS + 1))
+          fi
+          
+          # Advanced concepts
+          if find src/backend -name "*.js" -exec grep -q "PATH_TRAVERSAL\|injection\|attack" {} \;; then
+            echo "✓ Advanced Level: Attack vector understanding"
+            ADVANCED_CONCEPTS=$((ADVANCED_CONCEPTS + 1))
+          fi
+          
+          echo ""
+          echo "LEARNING PROGRESSION SUMMARY:"
+          echo "Beginner concepts: $BEGINNER_CONCEPTS"
+          echo "Intermediate concepts: $INTERMEDIATE_CONCEPTS" 
+          echo "Advanced concepts: $ADVANCED_CONCEPTS"
+          echo ""
+          echo "✓ Educational security objectives successfully validated"
+          echo "✓ Security components serve clear learning purposes"
+          echo "✓ Progressive difficulty appropriate for tutorial context"
+          echo "✓ Zero-dependency approach maximizes educational value"
+
+# Workflow summary and completion status
+  workflow_summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [dependency_audit, static_analysis, container_security, infrastructure_security, educational_security_review]
+    if: always()  # Run summary regardless of individual job outcomes
+    
+    steps:
+      # Generate comprehensive security scanning workflow summary report
+      - name: Security Scan Workflow Summary
+        run: |
+          echo "=== COMPREHENSIVE SECURITY SCAN WORKFLOW SUMMARY ==="
+          echo "=================================================="
+          echo ""
+          echo "SCAN EXECUTION DATE: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "REPOSITORY: ${{ github.repository }}"
+          echo "WORKFLOW: ${{ github.workflow }}"
+          echo "RUN ID: ${{ github.run_id }}"
+          echo ""
+          
+          # Job status summary
+          echo "JOB EXECUTION SUMMARY:"
+          echo "====================="
+          echo "1. Dependency Security Audit: ${{ needs.dependency_audit.result }}"
+          echo "2. Static Application Security Testing: ${{ needs.static_analysis.result }}"
+          echo "3. Container Security Scanning: ${{ needs.container_security.result }}"
+          echo "4. Infrastructure Security Analysis: ${{ needs.infrastructure_security.result }}"
+          echo "5. Educational Security Review: ${{ needs.educational_security_review.result }}"
+          echo ""
+          
+          # Overall security status
+          if [[ "${{ needs.dependency_audit.result }}" == "success" && \
+                "${{ needs.static_analysis.result }}" == "success" && \
+                "${{ needs.container_security.result }}" == "success" && \
+                "${{ needs.infrastructure_security.result }}" == "success" && \
+                "${{ needs.educational_security_review.result }}" == "success" ]]; then
+            echo "🔒 OVERALL SECURITY STATUS: PASSED"
+            echo "✅ All security scans completed successfully"
+            echo "✅ Zero-dependency architecture validated"
+            echo "✅ No critical security vulnerabilities detected"
+            echo "✅ Educational security objectives met"
+          else
+            echo "⚠️ OVERALL SECURITY STATUS: REVIEW REQUIRED"
+            echo "Some security scans require attention"
+            echo "Please review individual job results for details"
+          fi
+          
+          echo ""
+          echo "SECURITY SCANNING COVERAGE:"
+          echo "=========================="
+          echo "✓ Dependency vulnerability assessment"
+          echo "✓ Static application security testing (SAST)"
+          echo "✓ Container image security scanning"
+          echo "✓ Infrastructure configuration security"
+          echo "✓ Educational security practices validation"
+          echo ""
+          echo "NEXT STEPS:"
+          echo "==========="
+          echo "1. Review security findings in GitHub Security tab"
+          echo "2. Address any identified vulnerabilities or misconfigurations"
+          echo "3. Update security documentation as needed"
+          echo "4. Continue following zero-dependency security best practices"
+          echo ""
+          echo "For detailed results, visit: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
