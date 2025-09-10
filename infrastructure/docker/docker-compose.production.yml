@@ -1,0 +1,684 @@
+# Node.js Tutorial HTTP Server - Production Docker Compose Orchestration Configuration
+# 
+# This production-grade Docker Compose configuration orchestrates a comprehensive containerized
+# environment for the Node.js tutorial HTTP server application, implementing enterprise-level
+# patterns for high availability, comprehensive monitoring, security hardening, and operational
+# excellence while maintaining educational clarity and demonstrating advanced containerization concepts.
+#
+# Architecture Overview:
+# - Multi-service architecture with nginx reverse proxy, Node.js application, and monitoring stack
+# - Advanced networking with isolated production and monitoring networks for security segmentation
+# - Persistent storage strategy with comprehensive volume management and backup capabilities  
+# - Production security hardening with non-root execution, read-only filesystems, and capability dropping
+# - Comprehensive health monitoring with Docker health checks, Prometheus metrics, and Grafana dashboards
+# - Operational management with resource limits, restart policies, and graceful shutdown handling
+#
+# Educational Features:
+# - Demonstrates enterprise Docker Compose patterns and production orchestration strategies
+# - Shows advanced networking concepts with multiple isolated networks and service communication
+# - Illustrates comprehensive monitoring integration with Prometheus and Grafana for operational visibility
+# - Teaches security best practices including container hardening and network isolation
+# - Provides production deployment patterns with SSL termination, load balancing, and health monitoring
+#
+# Dependencies: 
+# - Docker Engine 20.10+ with Compose V2 support
+# - Production Dockerfile at infrastructure/docker/Dockerfile.production
+# - Nginx configuration at infrastructure/config/nginx.conf
+# - SSL certificates in designated volume mount location
+# - Prometheus configuration at infrastructure/monitoring/prometheus.yml
+# - Grafana provisioning at infrastructure/monitoring/grafana/
+#
+# Version: 3.8 (Docker Compose specification)
+# Compatibility: Docker Engine 19.03.0+, Docker Compose 1.28.0+
+
+version: '3.8'
+
+# Production Services Configuration
+# Implements comprehensive multi-service architecture with nginx reverse proxy,
+# Node.js application server, Prometheus metrics collection, and Grafana monitoring
+# with advanced networking, persistent storage, and operational management capabilities
+services:
+  # Node.js Tutorial Application Service
+  # Main HTTP server application optimized for production deployment with enterprise-grade
+  # resource allocation, security hardening, comprehensive health monitoring, and operational
+  # management capabilities while demonstrating educational containerization best practices
+  app:
+    # Container identification and build configuration
+    container_name: ${APP_CONTAINER_NAME:-nodejs-tutorial-app}
+    build:
+      context: ../..  # Build from project root for complete context access
+      dockerfile: infrastructure/docker/Dockerfile.production
+      target: production  # Use production stage from multi-stage Dockerfile
+      args:
+        NODE_ENV: production
+        BUILD_MODE: optimized
+        SECURITY_SCAN: enabled
+      cache_from:
+        - nodejs-tutorial:cache  # Use build cache for faster rebuilds
+    
+    # Container image configuration with version control
+    image: nodejs-tutorial-production:${VERSION:-latest}
+    
+    # Production restart policy for high availability
+    restart: unless-stopped
+    
+    # Comprehensive environment variables for production operation
+    environment:
+      # Core Node.js runtime configuration
+      NODE_ENV: production
+      PORT: ${APP_INTERNAL_PORT:-3000}
+      HOST: 0.0.0.0
+      
+      # Logging configuration with structured output
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ENABLE_CONSOLE_LOGGING: ${ENABLE_CONSOLE_LOGGING:-true}
+      ENABLE_FILE_LOGGING: ${ENABLE_FILE_LOGGING:-true}
+      LOG_FILE: /app/logs/production.log
+      ENABLE_REQUEST_LOGGING: ${ENABLE_REQUEST_LOGGING:-false}
+      ENABLE_ERROR_STACK_TRACES: ${ENABLE_ERROR_STACK_TRACES:-false}
+      
+      # HTTP server performance and timeout configuration
+      TIMEOUT: ${TIMEOUT:-120000}                    # 2 minutes request timeout
+      KEEP_ALIVE_TIMEOUT: ${KEEP_ALIVE_TIMEOUT:-5000}        # 5 seconds keep-alive
+      HEADERS_TIMEOUT: ${HEADERS_TIMEOUT:-60000}             # 1 minute headers timeout
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-300000}            # 5 minutes request timeout
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-1000}              # Maximum concurrent connections
+      CONNECTION_TIMEOUT: ${CONNECTION_TIMEOUT:-30000}       # 30 seconds connection timeout
+      
+      # Health monitoring and operational configuration
+      ENABLE_HEALTH_ENDPOINT: ${ENABLE_HEALTH_ENDPOINT:-true}
+      SECURITY_HEADERS_ENABLED: ${SECURITY_HEADERS_ENABLED:-true}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      PROMETHEUS_METRICS_ENABLED: ${PROMETHEUS_METRICS_ENABLED:-true}
+      GRACEFUL_SHUTDOWN_TIMEOUT: ${GRACEFUL_SHUTDOWN_TIMEOUT:-30000}
+      
+      # Instance identification for distributed deployment
+      INSTANCE_ID: ${HOSTNAME}
+    
+    # Advanced resource management and deployment configuration
+    deploy:
+      resources:
+        limits:
+          memory: ${APP_MEMORY_LIMIT:-512M}     # Maximum memory allocation
+          cpus: ${APP_CPU_LIMIT:-1.0}           # Maximum CPU allocation
+        reservations:
+          memory: ${APP_MEMORY_RESERVATION:-256M}   # Reserved memory guarantee
+          cpus: ${APP_CPU_RESERVATION:-0.5}         # Reserved CPU guarantee
+      restart_policy:
+        condition: any                          # Restart on any failure
+        delay: 10s                             # Delay between restart attempts
+        max_attempts: 3                        # Maximum restart attempts
+        window: 120s                           # Restart window for failure tracking
+      update_config:
+        parallelism: 1                         # Rolling update parallelism
+        delay: 10s                             # Delay between service updates
+        failure_action: rollback               # Rollback on failed updates
+        monitor: 60s                           # Update monitoring window
+    
+    # Persistent storage configuration with comprehensive volume management
+    volumes:
+      # Application logs with persistent storage and rotation capabilities
+      - nodejs-tutorial-logs:/app/logs
+      # Application data and runtime files with backup support
+      - nodejs-tutorial-data:/app/data  
+      # Temporary filesystem for ephemeral data with size limits
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100m
+          mode: "1777"
+    
+    # Production health check configuration aligned with application capabilities
+    healthcheck:
+      test: ["CMD", "node", "/app/scripts/docker-healthcheck.js"]
+      interval: 30s                            # Health check frequency
+      timeout: 10s                             # Health check timeout
+      retries: 3                               # Health check retry attempts
+      start_period: 60s                        # Grace period for application startup
+    
+    # Comprehensive security hardening configuration
+    user: node:node                            # Non-root execution for security
+    read_only: true                            # Read-only container filesystem
+    security_opt:
+      - no-new-privileges:true                 # Prevent privilege escalation
+    cap_drop:
+      - ALL                                    # Drop all Linux capabilities
+    pids_limit: 100                            # Limit number of PIDs for security
+    
+    # Advanced networking with multiple isolated networks
+    networks:
+      - nodejs-tutorial-production-network     # Production application traffic
+      - nodejs-tutorial-monitoring-network     # Monitoring and metrics collection
+    
+    # Comprehensive container metadata and service discovery labels
+    labels:
+      # Service identification and metadata
+      com.nodejs-tutorial.service: app
+      com.nodejs-tutorial.environment: production
+      com.nodejs-tutorial.version: ${VERSION:-1.0.0}
+      com.nodejs-tutorial.description: "Node.js tutorial HTTP server production application"
+      com.nodejs-tutorial.port: ${APP_INTERNAL_PORT:-3000}
+      com.nodejs-tutorial.protocol: http
+      com.nodejs-tutorial.health-check: enabled
+      com.nodejs-tutorial.monitoring: production
+      com.nodejs-tutorial.maintainer: "Node.js Tutorial Team"
+      
+      # Disable Traefik auto-discovery for security
+      traefik.enable: "false"
+      
+      # Prometheus scraping configuration for metrics collection
+      prometheus.io/scrape: "true"
+      prometheus.io/port: ${APP_INTERNAL_PORT:-3000}
+      prometheus.io/path: /metrics
+    
+    # Production logging configuration with size limits and rotation
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"                        # Maximum log file size
+        max-file: "5"                          # Number of log files to retain
+        labels: "com.nodejs-tutorial.service,com.nodejs-tutorial.environment"
+    
+    # Service dependency management ensuring proper startup order
+    depends_on:
+      nginx:
+        condition: service_healthy             # Wait for nginx to be healthy
+  
+  # Nginx Reverse Proxy Service  
+  # High-performance nginx reverse proxy for production load balancing, SSL termination,
+  # security headers, and HTTP traffic management with comprehensive logging and monitoring
+  # integration providing enterprise-grade web server capabilities
+  nginx:
+    # Container identification and image configuration
+    container_name: ${NGINX_CONTAINER_NAME:-nodejs-tutorial-nginx}
+    image: nginx:1.24-alpine                   # Stable Alpine-based nginx image
+    
+    # Production restart policy for high availability
+    restart: unless-stopped
+    
+    # Network port exposure for HTTP and HTTPS traffic
+    ports:
+      - target: 80
+        published: ${PRODUCTION_PORT:-80}      # HTTP port binding
+        protocol: tcp
+        mode: host
+      - target: 443  
+        published: ${SSL_PORT:-443}            # HTTPS port binding
+        protocol: tcp
+        mode: host
+    
+    # Nginx environment variables for configuration management
+    environment:
+      # Nginx server configuration
+      NGINX_HOST: ${NGINX_HOST:-localhost}
+      NGINX_PORT: ${PRODUCTION_PORT:-80}
+      NGINX_SSL_PORT: ${SSL_PORT:-443}
+      UPSTREAM_SERVER: app:${APP_INTERNAL_PORT:-3000}
+      
+      # SSL and security configuration
+      ENABLE_SSL: ${ENABLE_SSL:-false}
+      SSL_CERTIFICATE_PATH: ${SSL_CERTIFICATE_PATH:-/etc/ssl/certs/server.crt}
+      SSL_PRIVATE_KEY_PATH: ${SSL_PRIVATE_KEY_PATH:-/etc/ssl/private/server.key}
+      
+      # Performance and limit configuration
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-10m}
+      PROXY_TIMEOUT: ${PROXY_TIMEOUT:-120s}
+      RATE_LIMIT: ${NGINX_RATE_LIMIT:-10r/s}
+      ACCESS_LOG_FORMAT: combined_with_time
+    
+    # Comprehensive volume mounts for configuration, logs, cache, and SSL
+    volumes:
+      # Nginx configuration with read-only access
+      - ../config/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Nginx logs with persistent storage and operational visibility
+      - nginx-logs:/var/log/nginx
+      # Nginx cache for performance optimization
+      - nginx-cache:/var/cache/nginx  
+      # SSL certificates with secure storage and restricted access
+      - ssl-certificates:/etc/ssl/certs:ro
+    
+    # Nginx health check configuration for load balancer integration
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s                            # Health check frequency
+      timeout: 5s                              # Health check timeout
+      retries: 3                               # Health check retry attempts  
+      start_period: 30s                        # Grace period for nginx startup
+    
+    # Resource management configuration for nginx optimization
+    deploy:
+      resources:
+        limits:
+          memory: ${NGINX_MEMORY_LIMIT:-256M}   # Maximum memory allocation
+          cpus: ${NGINX_CPU_LIMIT:-0.5}         # Maximum CPU allocation
+        reservations:
+          memory: ${NGINX_MEMORY_RESERVATION:-128M}  # Reserved memory guarantee
+          cpus: ${NGINX_CPU_RESERVATION:-0.25}       # Reserved CPU guarantee
+    
+    # Security hardening configuration for nginx
+    user: nginx:nginx                          # Non-root execution
+    read_only: true                            # Read-only container filesystem
+    security_opt:
+      - no-new-privileges:true                 # Prevent privilege escalation
+    cap_drop:
+      - ALL                                    # Drop all Linux capabilities
+    cap_add:
+      # Essential capabilities for nginx operation
+      - CHOWN                                  # Change file ownership
+      - SETGID                                 # Set group ID
+      - SETUID                                 # Set user ID  
+      - NET_BIND_SERVICE                       # Bind to privileged ports
+    
+    # Production network configuration
+    networks:
+      - nodejs-tutorial-production-network     # Production traffic handling
+    
+    # Comprehensive service labels and metadata
+    labels:
+      com.nodejs-tutorial.service: nginx
+      com.nodejs-tutorial.environment: production
+      com.nodejs-tutorial.description: "Production reverse proxy and load balancer"
+      com.nodejs-tutorial.port: ${PRODUCTION_PORT:-80}
+      com.nodejs-tutorial.ssl-port: ${SSL_PORT:-443}
+      com.nodejs-tutorial.protocol: "http,https"
+      com.nodejs-tutorial.health-check: enabled
+    
+    # Production logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    
+    # Service dependency ensuring application availability
+    depends_on:
+      - app                                    # Ensure application is available
+  
+  # Prometheus Metrics Collection Service
+  # Prometheus metrics collection service for production monitoring, alerting, and observability
+  # with comprehensive application and infrastructure metrics gathering, time series storage,
+  # and integration with alerting and visualization systems
+  prometheus:
+    # Container identification and image configuration  
+    container_name: ${PROMETHEUS_CONTAINER_NAME:-nodejs-tutorial-prometheus}
+    image: prom/prometheus:v2.45.0             # Stable Prometheus release
+    
+    # Production restart policy for metrics continuity
+    restart: unless-stopped
+    
+    # Prometheus metrics port exposure
+    ports:
+      - target: 9090
+        published: ${PROMETHEUS_PORT:-9090}    # Prometheus web UI and API port
+        protocol: tcp
+        mode: host
+    
+    # Prometheus configuration environment variables
+    environment:
+      PROMETHEUS_RETENTION_TIME: ${PROMETHEUS_RETENTION_TIME:-15d}     # Metrics retention period
+      PROMETHEUS_RETENTION_SIZE: ${PROMETHEUS_RETENTION_SIZE:-10GB}    # Storage size limit
+      PROMETHEUS_STORAGE_PATH: /prometheus/data                        # Data storage path
+      PROMETHEUS_CONFIG_PATH: /etc/prometheus/prometheus.yml           # Configuration file path
+    
+    # Prometheus startup command with comprehensive configuration
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'               # Configuration file
+      - '--storage.tsdb.path=/prometheus/data'                       # Time series database path
+      - '--web.console.libraries=/etc/prometheus/console_libraries'  # Console library path
+      - '--web.console.templates=/etc/prometheus/consoles'           # Console template path
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-15d}'  # Data retention time
+      - '--storage.tsdb.retention.size=${PROMETHEUS_RETENTION_SIZE:-10GB}' # Data retention size
+      - '--web.enable-lifecycle'                                     # Enable lifecycle management API
+      - '--web.enable-admin-api'                                     # Enable administrative API
+    
+    # Prometheus volume configuration for configuration and data persistence
+    volumes:
+      # Prometheus configuration with read-only access
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Prometheus data with persistent storage and backup capabilities
+      - prometheus-data:/prometheus/data
+    
+    # Prometheus health check configuration
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s                            # Health check frequency
+      timeout: 10s                             # Health check timeout
+      retries: 3                               # Health check retry attempts
+      start_period: 30s                        # Grace period for Prometheus startup
+    
+    # Resource management for Prometheus optimization
+    deploy:
+      resources:
+        limits:
+          memory: ${PROMETHEUS_MEMORY_LIMIT:-1G}      # Maximum memory allocation
+          cpus: ${PROMETHEUS_CPU_LIMIT:-1.0}          # Maximum CPU allocation
+        reservations:
+          memory: ${PROMETHEUS_MEMORY_RESERVATION:-512M}  # Reserved memory guarantee
+          cpus: ${PROMETHEUS_CPU_RESERVATION:-0.5}        # Reserved CPU guarantee
+    
+    # Security hardening for Prometheus
+    user: prometheus:prometheus                # Non-root execution
+    read_only: true                            # Read-only container filesystem
+    security_opt:
+      - no-new-privileges:true                 # Prevent privilege escalation
+    
+    # Monitoring network isolation
+    networks:
+      - nodejs-tutorial-monitoring-network     # Isolated monitoring network
+    
+    # Prometheus service labels and metadata
+    labels:
+      com.nodejs-tutorial.service: prometheus
+      com.nodejs-tutorial.environment: production
+      com.nodejs-tutorial.description: "Production metrics collection and monitoring"
+      com.nodejs-tutorial.port: ${PROMETHEUS_PORT:-9090}
+    
+    # Service dependency ensuring application metrics availability
+    depends_on:
+      - app                                    # Ensure application metrics are available
+  
+  # Grafana Dashboard Service
+  # Grafana dashboard service for production metrics visualization, alerting, and operational
+  # insight with comprehensive Node.js application monitoring dashboards, user management,
+  # and integration with Prometheus data sources for complete observability
+  grafana:
+    # Container identification and image configuration
+    container_name: ${GRAFANA_CONTAINER_NAME:-nodejs-tutorial-grafana}
+    image: grafana/grafana:10.0.0              # Stable Grafana release
+    
+    # Production restart policy for dashboard continuity
+    restart: unless-stopped
+    
+    # Grafana dashboard port exposure  
+    ports:
+      - target: 3000
+        published: ${GRAFANA_PORT:-3001}       # Grafana web UI port (avoiding conflict with app)
+        protocol: tcp
+        mode: host
+    
+    # Grafana configuration environment variables
+    environment:
+      # Authentication and security configuration
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"         # Disable user self-registration
+      
+      # Plugin and feature configuration
+      GF_INSTALL_PLUGINS: grafana-piechart-panel,grafana-worldmap-panel
+      
+      # Server and networking configuration
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+      
+      # Analytics and tracking configuration (disabled for privacy)
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      
+      # Logging configuration
+      GF_LOG_LEVEL: info
+    
+    # Grafana volume configuration for data persistence and dashboard provisioning
+    volumes:
+      # Grafana data with persistent storage and backup capabilities
+      - grafana-data:/var/lib/grafana
+      # Pre-configured dashboards with read-only access
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      # Dashboard and data source provisioning configuration
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    
+    # Grafana health check configuration
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s                            # Health check frequency
+      timeout: 10s                             # Health check timeout  
+      retries: 3                               # Health check retry attempts
+      start_period: 30s                        # Grace period for Grafana startup
+    
+    # Resource management for Grafana optimization
+    deploy:
+      resources:
+        limits:
+          memory: ${GRAFANA_MEMORY_LIMIT:-512M}       # Maximum memory allocation
+          cpus: ${GRAFANA_CPU_LIMIT:-0.5}             # Maximum CPU allocation
+        reservations:
+          memory: ${GRAFANA_MEMORY_RESERVATION:-256M}  # Reserved memory guarantee
+          cpus: ${GRAFANA_CPU_RESERVATION:-0.25}       # Reserved CPU guarantee
+    
+    # Security hardening for Grafana
+    user: grafana:grafana                      # Non-root execution
+    read_only: true                            # Read-only container filesystem  
+    security_opt:
+      - no-new-privileges:true                 # Prevent privilege escalation
+    
+    # Monitoring network isolation
+    networks:
+      - nodejs-tutorial-monitoring-network     # Isolated monitoring network
+    
+    # Grafana service labels and metadata
+    labels:
+      com.nodejs-tutorial.service: grafana
+      com.nodejs-tutorial.environment: production
+      com.nodejs-tutorial.description: "Production monitoring dashboards and visualization"
+      com.nodejs-tutorial.port: ${GRAFANA_PORT:-3001}
+    
+    # Service dependency ensuring metrics data availability
+    depends_on:
+      - prometheus                             # Ensure Prometheus is available for data
+
+# Production Network Configuration
+# Implements advanced networking with isolated networks for security segmentation,
+# optimized performance configuration, and comprehensive service discovery and communication
+networks:
+  # Production Application Network
+  # Dedicated network for main application traffic with optimized performance and security
+  # configuration for HTTP request handling, load balancing, and service communication
+  nodejs-tutorial-production-network:
+    driver: bridge                             # Bridge network driver for container communication
+    driver_opts:
+      com.docker.network.bridge.name: nodejs-prod-br0          # Custom bridge name
+      com.docker.network.bridge.enable_icc: "true"             # Inter-container communication
+      com.docker.network.bridge.enable_ip_masquerade: "true"   # IP masquerading for external access
+      com.docker.network.driver.mtu: "1500"                    # Maximum transmission unit optimization
+    ipam:
+      driver: default                          # Default IPAM driver
+      config:
+        - subnet: 172.20.0.0/16                # Production network subnet
+          gateway: 172.20.0.1                  # Production network gateway
+    labels:
+      com.nodejs-tutorial.network: production
+      com.nodejs-tutorial.purpose: "Application traffic with load balancing and proxy"
+      com.nodejs-tutorial.environment: production
+  
+  # Monitoring Network
+  # Isolated network for metrics collection, dashboard access, and observability infrastructure
+  # with restricted access and optimized configuration for monitoring traffic isolation
+  nodejs-tutorial-monitoring-network:
+    driver: bridge                             # Bridge network driver for monitoring isolation
+    driver_opts:
+      com.docker.network.bridge.name: nodejs-mon-br0           # Custom monitoring bridge name
+      com.docker.network.bridge.enable_icc: "true"             # Enable inter-container communication
+      com.docker.network.driver.mtu: "1500"                    # MTU optimization for monitoring traffic
+    ipam:
+      driver: default                          # Default IPAM driver
+      config:
+        - subnet: 172.21.0.0/16                # Monitoring network subnet  
+          gateway: 172.21.0.1                  # Monitoring network gateway
+    labels:
+      com.nodejs-tutorial.network: monitoring
+      com.nodejs-tutorial.purpose: "Metrics collection and monitoring dashboard access"
+      com.nodejs-tutorial.environment: production
+
+# Production Volume Configuration  
+# Implements comprehensive persistent storage strategy with host path binding, backup capabilities,
+# and operational management support for logs, data, configuration, and monitoring information
+volumes:
+  # Application Logs Volume
+  # Persistent volume for production application logs with retention policies, rotation capabilities,
+  # and centralized log management integration for operational visibility and troubleshooting
+  nodejs-tutorial-logs:
+    driver: local                              # Local storage driver
+    driver_opts:
+      type: none                               # Direct host path binding
+      o: bind                                  # Bind mount option
+      device: ${LOG_VOLUME_PATH:-/var/lib/nodejs-tutorial/logs}  # Host path for logs
+    labels:
+      com.nodejs-tutorial.volume: logs
+      com.nodejs-tutorial.purpose: "Production application logs with persistence and rotation"
+      com.nodejs-tutorial.backup: enabled
+      com.nodejs-tutorial.retention: 30d
+  
+  # Application Data Volume  
+  # Persistent volume for application data, configuration, and runtime files with backup
+  # capabilities and operational management support for data persistence and recovery
+  nodejs-tutorial-data:
+    driver: local                              # Local storage driver
+    driver_opts:
+      type: none                               # Direct host path binding
+      o: bind                                  # Bind mount option
+      device: ${DATA_VOLUME_PATH:-/var/lib/nodejs-tutorial/data}  # Host path for data
+    labels:
+      com.nodejs-tutorial.volume: data
+      com.nodejs-tutorial.purpose: "Application data and runtime files with backup support"
+      com.nodejs-tutorial.backup: enabled
+      com.nodejs-tutorial.retention: permanent
+  
+  # Nginx Logs Volume
+  # Persistent volume for nginx access logs, error logs, and reverse proxy operational data
+  # with log rotation and monitoring integration for traffic analysis and troubleshooting
+  nginx-logs:
+    driver: local                              # Local storage driver
+    labels:
+      com.nodejs-tutorial.volume: nginx-logs
+      com.nodejs-tutorial.purpose: "Nginx reverse proxy logs and operational data"
+  
+  # Nginx Cache Volume
+  # Persistent volume for nginx cache storage, temporary files, and proxy cache management
+  # with performance optimization and automatic cleanup capabilities
+  nginx-cache:
+    driver: local                              # Local storage driver  
+    labels:
+      com.nodejs-tutorial.volume: nginx-cache
+      com.nodejs-tutorial.purpose: "Nginx cache and temporary file storage"
+  
+  # SSL Certificates Volume
+  # Persistent volume for SSL/TLS certificates, private keys, and security credentials with
+  # secure storage and access control for HTTPS termination and encrypted communication
+  ssl-certificates:
+    driver: local                              # Local storage driver
+    driver_opts:
+      type: none                               # Direct host path binding
+      o: bind                                  # Bind mount option
+      device: ${SSL_CERTS_PATH:-/etc/ssl/nodejs-tutorial}  # Host path for SSL certificates
+    labels:
+      com.nodejs-tutorial.volume: ssl-certificates
+      com.nodejs-tutorial.purpose: "SSL certificates and security credentials"
+      com.nodejs-tutorial.security: high
+      com.nodejs-tutorial.backup: encrypted
+  
+  # Prometheus Data Volume
+  # Persistent volume for Prometheus metrics data, time series database storage, and monitoring
+  # data retention with backup capabilities and operational management for observability continuity
+  prometheus-data:
+    driver: local                              # Local storage driver
+    driver_opts:
+      type: none                               # Direct host path binding
+      o: bind                                  # Bind mount option  
+      device: ${PROMETHEUS_DATA_PATH:-/var/lib/prometheus/data}  # Host path for Prometheus data
+    labels:
+      com.nodejs-tutorial.volume: prometheus-data
+      com.nodejs-tutorial.purpose: "Prometheus metrics data and time series storage"
+      com.nodejs-tutorial.backup: enabled
+      com.nodejs-tutorial.retention: 15d
+  
+  # Grafana Data Volume
+  # Persistent volume for Grafana dashboard configurations, user settings, and visualization
+  # data with backup and restore capabilities for dashboard persistence and user management
+  grafana-data:
+    driver: local                              # Local storage driver
+    driver_opts:
+      type: none                               # Direct host path binding
+      o: bind                                  # Bind mount option
+      device: ${GRAFANA_DATA_PATH:-/var/lib/grafana}  # Host path for Grafana data
+    labels:
+      com.nodejs-tutorial.volume: grafana-data
+      com.nodejs-tutorial.purpose: "Grafana dashboards and configuration data"
+      com.nodejs-tutorial.backup: enabled
+
+# Production Docker Compose Configuration End
+#
+# Usage Instructions:
+#
+# Environment Setup:
+# 1. Create production environment file (.env.production):
+#    cp .env.example .env.production
+#    # Edit with production-specific values
+#
+# 2. Create required host directories:
+#    sudo mkdir -p /var/lib/nodejs-tutorial/{logs,data}
+#    sudo mkdir -p /etc/ssl/nodejs-tutorial
+#    sudo mkdir -p /var/lib/{prometheus/data,grafana}
+#    sudo chown 65534:65534 /var/lib/prometheus/data  # prometheus user
+#    sudo chown 472:472 /var/lib/grafana              # grafana user
+#
+# 3. Place SSL certificates (if using HTTPS):
+#    sudo cp server.crt /etc/ssl/nodejs-tutorial/
+#    sudo cp server.key /etc/ssl/nodejs-tutorial/
+#    sudo chmod 600 /etc/ssl/nodejs-tutorial/server.key
+#
+# Deployment Commands:
+# 
+# Build and Start (Production):
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml --env-file .env.production up --build -d
+#
+# Start Services (Pre-built):  
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml --env-file .env.production up -d
+#
+# Stop Services:
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml down
+#
+# Stop and Remove Volumes (CAUTION - Data Loss):
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml down -v
+#
+# Monitoring and Management:
+#
+# View Logs:
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml logs -f [service-name]
+#
+# Health Status:
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml ps
+#
+# Scale Services:
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml up --scale app=3 -d
+#
+# Service Access:
+# - Application: http://localhost:80/hello (HTTP) or https://localhost:443/hello (HTTPS)
+# - Health Check: http://localhost:80/health or https://localhost:443/health  
+# - Prometheus: http://localhost:9090
+# - Grafana: http://localhost:3001 (admin/admin123)
+#
+# Backup Commands:
+# 
+# Application Data:
+#   tar -czf nodejs-tutorial-data-$(date +%Y%m%d).tar.gz /var/lib/nodejs-tutorial/
+#
+# Database Backup (Prometheus):
+#   docker-compose -f infrastructure/docker/docker-compose.production.yml exec prometheus promtool tsdb snapshot /prometheus/data
+#
+# Configuration Backup:
+#   tar -czf nodejs-tutorial-config-$(date +%Y%m%d).tar.gz infrastructure/
+#
+# Security Considerations:
+# - All services run as non-root users for security isolation
+# - Read-only filesystems prevent runtime modifications
+# - Network segmentation isolates production and monitoring traffic
+# - SSL/TLS termination at nginx for encrypted communication
+# - Resource limits prevent resource exhaustion attacks
+# - Health checks enable automatic failure detection and recovery
+# - Comprehensive logging for security monitoring and incident response
+#
+# Educational Value:
+# - Demonstrates enterprise Docker Compose orchestration patterns
+# - Shows production security hardening and network isolation
+# - Illustrates comprehensive monitoring with metrics and visualization
+# - Teaches SSL termination and reverse proxy configuration
+# - Provides operational management patterns for production deployment
+# - Demonstrates backup and disaster recovery considerations

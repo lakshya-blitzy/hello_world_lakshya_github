@@ -1,0 +1,309 @@
+# =============================================================================
+# Production Docker Compose Configuration for Node.js Tutorial HTTP Server
+# =============================================================================
+# This Docker Compose configuration orchestrates a production-ready deployment
+# of the Node.js tutorial HTTP server application with comprehensive operational
+# management, security hardening, health monitoring, and performance optimization.
+# 
+# PRODUCTION FEATURES:
+# - Resource management with memory and CPU limits for predictable performance
+# - Security hardening including read-only filesystem and privilege restrictions
+# - Health monitoring with custom health check script and automated restart
+# - Persistent volume management for logs and operational data
+# - Production networking with isolated bridge network and performance tuning
+# - Container labels for operational metadata and monitoring integration
+# 
+# EDUCATIONAL OBJECTIVES:
+# - Demonstrates Docker Compose best practices for production deployment
+# - Shows container orchestration with service management and networking
+# - Illustrates operational aspects including monitoring and resource management
+# - Teaches production security hardening in containerized environments
+#
+# COMPATIBILITY:
+# - Docker Compose version 3.8+ required for all production features
+# - Node.js 22.x LTS with Alpine Linux base image for security and performance
+# - Compatible with Docker Desktop, Docker Engine 20.x+, and cloud platforms
+# =============================================================================
+
+# Docker Compose file format version - 3.8 provides production feature support
+version: '3.8'
+
+# =============================================================================
+# SERVICES CONFIGURATION
+# =============================================================================
+# Single Node.js application service optimized for production deployment with
+# comprehensive health monitoring, security hardening, and operational management.
+
+services:
+  # Main Node.js tutorial HTTP server application service
+  app:
+    # Container identification and metadata
+    container_name: nodejs-tutorial-app
+    
+    # Production image build configuration with multi-stage optimization
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        NODE_ENV: production
+        BUILD_MODE: production
+    
+    # Production image tag for consistent deployment identification
+    image: nodejs-tutorial:latest
+    
+    # Server port mapping with configurable host port binding
+    # Uses environment variable with fallback to port 3000 for flexibility
+    ports:
+      - "${PORT:-3000}:3000"
+    
+    # Production environment variables optimized for performance and security
+    environment:
+      # Application environment and runtime configuration
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      
+      # Logging configuration for production monitoring and debugging
+      LOG_LEVEL: info
+      ENABLE_CONSOLE_LOGGING: 'true'
+      ENABLE_FILE_LOGGING: 'true'
+      LOG_FILE: /app/logs/production.log
+      
+      # Request handling optimized for production performance
+      ENABLE_REQUEST_LOGGING: 'false'     # Disabled for performance
+      ENABLE_ERROR_STACK_TRACES: 'false'  # Disabled for security
+      
+      # Performance and timeout configuration for production stability
+      TIMEOUT: '120000'
+      KEEP_ALIVE_TIMEOUT: '5000'
+      HEADERS_TIMEOUT: '60000'
+      REQUEST_TIMEOUT: '300000'
+      MAX_CONNECTIONS: '1000'
+      CONNECTION_TIMEOUT: '30000'
+      
+      # Production feature flags and security settings
+      ENABLE_HEALTH_ENDPOINT: 'true'
+      SECURITY_HEADERS_ENABLED: 'true'
+    
+    # Persistent volume mounts for data persistence and operational management
+    volumes:
+      # Production application logs with rotation and retention capabilities
+      - nodejs-tutorial-logs:/app/logs
+      
+      # Application data and runtime files with backup and recovery support
+      - nodejs-tutorial-data:/app/data
+    
+    # Production command override using main application entry point
+    command: ["node", "/app/server.js"]
+    
+    # Application working directory for consistent file path resolution
+    working_dir: /app
+    
+    # Security: Run as non-root node user to limit privilege escalation
+    user: node
+    
+    # Restart policy for high availability and automatic recovery
+    restart: unless-stopped
+    
+    # Production health monitoring with custom health check script
+    healthcheck:
+      test: ["CMD", "node", "/app/scripts/docker-healthcheck.js"]
+      interval: 30s      # Regular health monitoring every 30 seconds
+      timeout: 10s       # Health check timeout for responsiveness validation
+      retries: 3         # Retry attempts before marking container unhealthy
+      start_period: 40s  # Grace period for application initialization
+    
+    # Resource management for predictable production performance
+    deploy:
+      resources:
+        # Resource limits to prevent resource exhaustion and ensure stability
+        limits:
+          memory: 256M     # Maximum memory allocation for container stability
+          cpus: '0.5'      # CPU limit for performance predictability
+          pids: 100        # Process limit to prevent fork bombs
+        
+        # Resource reservations for guaranteed minimum availability
+        reservations:
+          memory: 128M     # Minimum guaranteed memory allocation
+          cpus: '0.25'     # Minimum guaranteed CPU allocation
+    
+    # Security hardening configuration for production deployment
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation attacks
+    
+    # Read-only root filesystem for security with specific writable mounts
+    read_only: true
+    
+    # Temporary filesystems for performance optimization and security
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=50m     # Temporary files with security restrictions
+      - /var/run:rw,noexec,nosuid,size=10m # Runtime files with size limits
+    
+    # Network attachment to production network with security and performance
+    networks:
+      - nodejs-tutorial-network
+    
+    # Container labels for operational metadata and monitoring integration
+    labels:
+      # Service identification and categorization
+      com.nodejs-tutorial.service: "app"
+      com.nodejs-tutorial.environment: "production"
+      com.nodejs-tutorial.description: "Node.js tutorial HTTP server production environment"
+      com.nodejs-tutorial.version: "1.0.0"
+      com.nodejs-tutorial.maintainer: "Node.js Tutorial Team"
+      
+      # Network and connectivity metadata
+      com.nodejs-tutorial.port: "3000"
+      com.nodejs-tutorial.protocol: "http"
+      
+      # Operational management metadata
+      com.nodejs-tutorial.health-check: "enabled"
+      com.nodejs-tutorial.monitoring: "production"
+
+# =============================================================================
+# NETWORKS CONFIGURATION
+# =============================================================================
+# Production networking with security and performance optimization for
+# container communication and external traffic handling.
+
+networks:
+  nodejs-tutorial-network:
+    # Bridge driver for container networking with performance optimization
+    driver: bridge
+    
+    # Network driver options for production performance tuning
+    driver_opts:
+      com.docker.network.bridge.name: nodejs-tutorial-br
+      com.docker.network.driver.mtu: '1500'  # Standard MTU for optimal performance
+    
+    # IP address management with dedicated subnet for network isolation
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16  # Dedicated subnet for application traffic
+    
+    # Network labels for operational management and documentation
+    labels:
+      com.nodejs-tutorial.network: "production"
+      com.nodejs-tutorial.purpose: "Production environment networking with security and performance optimization"
+
+# =============================================================================
+# VOLUMES CONFIGURATION
+# =============================================================================
+# Persistent volumes for production data storage with backup and recovery
+# capabilities for operational data management.
+
+volumes:
+  # Production application logs with proper retention and rotation capabilities
+  nodejs-tutorial-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOG_VOLUME_PATH:-/var/lib/nodejs-tutorial/logs}
+    
+    # Volume labels for operational management and backup identification
+    labels:
+      com.nodejs-tutorial.volume: "logs"
+      com.nodejs-tutorial.purpose: "Production log storage with persistence and rotation"
+  
+  # Production application data and runtime files with backup capabilities
+  nodejs-tutorial-data:
+    driver: local
+    
+    # Volume labels for operational management and backup procedures
+    labels:
+      com.nodejs-tutorial.volume: "data"
+      com.nodejs-tutorial.purpose: "Production data storage for application runtime files"
+
+# =============================================================================
+# PRODUCTION DEPLOYMENT INSTRUCTIONS
+# =============================================================================
+# 
+# INITIAL SETUP:
+# 1. Create production environment file:
+#    cp .env.example .env
+#    
+# 2. Configure production environment variables:
+#    Edit .env file with production-specific settings
+#    
+# 3. Create production volume directories:
+#    sudo mkdir -p /var/lib/nodejs-tutorial/logs
+#    sudo chown -R 1000:1000 /var/lib/nodejs-tutorial
+#
+# DEPLOYMENT COMMANDS:
+# 1. Build and start production environment:
+#    docker-compose up --build -d
+#    
+# 2. View production logs:
+#    docker-compose logs -f app
+#    
+# 3. Monitor container health:
+#    docker-compose ps
+#    
+# 4. Scale for production load (if needed):
+#    docker-compose up --scale app=3
+#
+# OPERATIONAL MANAGEMENT:
+# 1. Health monitoring:
+#    curl http://localhost:3000/hello
+#    
+# 2. Container shell access:
+#    docker-compose exec app /bin/sh
+#    
+# 3. Log analysis:
+#    docker-compose exec app tail -f /app/logs/production.log
+#    
+# 4. Resource monitoring:
+#    docker stats nodejs-tutorial-app
+#
+# MAINTENANCE PROCEDURES:
+# 1. Update application:
+#    docker-compose build --no-cache
+#    docker-compose up -d
+#    
+# 2. Backup volumes:
+#    docker run --rm -v nodejs-tutorial-logs:/source -v /backup:/backup alpine tar czf /backup/logs-$(date +%Y%m%d).tar.gz -C /source .
+#    
+# 3. Restart services:
+#    docker-compose restart app
+#    
+# 4. Clean unused resources:
+#    docker system prune -f
+#
+# MONITORING AND ALERTING:
+# 1. Container health status:
+#    docker inspect --format='{{.State.Health.Status}}' nodejs-tutorial-app
+#    
+# 2. Resource usage monitoring:
+#    docker stats --no-stream nodejs-tutorial-app
+#    
+# 3. Log monitoring integration:
+#    Configure log aggregation tools to monitor /var/lib/nodejs-tutorial/logs
+#    
+# 4. External monitoring:
+#    Configure uptime monitoring for http://your-domain:3000/hello
+#
+# SECURITY CONSIDERATIONS:
+# - Containers run as non-root user (node:node)
+# - Read-only root filesystem with minimal writable mounts
+# - Network isolation using custom bridge network
+# - Resource limits prevent DoS attacks
+# - Security headers enabled in application configuration
+# - No sensitive data in environment variables (use Docker secrets for production secrets)
+#
+# TROUBLESHOOTING:
+# 1. Container startup issues:
+#    docker-compose logs app
+#    
+# 2. Port binding conflicts:
+#    netstat -tlnp | grep 3000
+#    
+# 3. Volume permission issues:
+#    sudo chown -R 1000:1000 /var/lib/nodejs-tutorial
+#    
+# 4. Health check failures:
+#    docker-compose exec app node /app/scripts/docker-healthcheck.js
+#
+# =============================================================================

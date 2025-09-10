@@ -1,0 +1,67 @@
+# EditorConfig configuration file for Node.js tutorial HTTP server application
+# Provides consistent formatting rules across all editors and IDEs
+# Ensures uniform code style regardless of development environment
+# Aligns with ESLint and Prettier configurations while maintaining cross-platform compatibility
+
+# Root declaration - indicates this is the top-level EditorConfig file
+# Stops searching for additional .editorconfig files in parent directories
+root = true
+
+# Universal settings - applies to all files for basic text formatting consistency
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# JavaScript files configuration - supports ES2023 features and ES modules
+# Uses 4-space indentation to match ESLint rules and enhance educational readability
+[*.{js,mjs,cjs}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# JSON files configuration - standard formatting with improved nested structure visibility
+# Uses 2-space indentation for better readability and alignment with package.json standards
+[*.json]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# YAML files configuration - follows YAML best practices and Docker Compose standards
+# Uses 2-space indentation as recommended by YAML specification
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# Markdown files configuration - special handling for trailing whitespace
+# Preserves meaningful trailing spaces which can be significant in Markdown formatting (line breaks)
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+trim_trailing_whitespace = false
+
+# Configuration files - consistent formatting for general config files
+[*.{config,conf}]
+indent_style = space
+indent_size = 2
+
+# Shell scripts configuration - Unix-style line endings for cross-platform compatibility
+[*.sh]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Dockerfile configuration - consistent formatting for container build scripts
+[{Dockerfile,Dockerfile.*}]
+indent_style = space
+indent_size = 2
+
+# Package.json special configuration - slightly longer line length for dependency declarations
+# Accommodates longer dependency names and version specifications
+[package.json]
+indent_style = space
+indent_size = 2
+max_line_length = 100

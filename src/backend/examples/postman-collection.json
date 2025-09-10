@@ -1,0 +1,1074 @@
+{
+  "info": {
+    "name": "Node.js Tutorial HTTP Server API",
+    "description": "Comprehensive Postman collection for testing the Node.js tutorial HTTP server with educational examples, error scenarios, performance testing, and security validation. This collection demonstrates HTTP client testing patterns, request organization, automated testing scripts, and API exploration workflows using Postman's collection format v2.1.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "tutorial-http-server-collection",
+    "_exporter_id": "node-tutorial-exporter"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string",
+      "description": "Base URL for the Node.js tutorial server"
+    },
+    {
+      "key": "port",
+      "value": "3000",
+      "type": "string",
+      "description": "Server port number for HTTP connections"
+    },
+    {
+      "key": "timeout",
+      "value": "10000",
+      "type": "string",
+      "description": "Request timeout in milliseconds"
+    },
+    {
+      "key": "userAgent",
+      "value": "Postman Tutorial Client/1.0",
+      "type": "string",
+      "description": "User-Agent header for educational HTTP client identification"
+    },
+    {
+      "key": "requestId",
+      "value": "{{$randomUUID}}",
+      "type": "string",
+      "description": "Unique request identifier for correlation tracking"
+    }
+  ],
+  "item": [
+    {
+      "name": "Core Endpoints",
+      "description": "Main API endpoints including hello and health endpoints with basic functionality testing",
+      "item": [
+        {
+          "name": "Hello World - Basic Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test status code is 200 OK for successful hello response",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test response body contains expected 'Hello world' message",
+                  "pm.test(\"Response body contains 'Hello world'\", function () {",
+                  "    pm.expect(pm.response.text()).to.equal('Hello world');",
+                  "});",
+                  "",
+                  "// Test Content-Type header is 'text/plain' as specified",
+                  "pm.test(\"Content-Type header is 'text/plain'\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/plain');",
+                  "});",
+                  "",
+                  "// Test response time is under 100ms performance threshold",
+                  "pm.test(\"Response time is under 100ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(100);",
+                  "});",
+                  "",
+                  "// Test security headers are present for web security compliance",
+                  "pm.test(\"Security headers are present\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.equal('DENY');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "description": "Educational User-Agent header for client identification"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain",
+                "description": "Content type preference for hello endpoint response"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "name": "Hello World - With Custom Headers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful response with custom headers processing",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Validate server processes custom headers appropriately",
+                  "pm.test(\"Server processes custom headers\", function () {",
+                  "    pm.expect(pm.response.text()).to.equal('Hello world');",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/plain');",
+                  "});",
+                  "",
+                  "// Educational analysis of custom header usage patterns",
+                  "pm.test(\"Educational header analysis\", function () {",
+                  "    console.log('Request headers demonstrate HTTP header semantics:');",
+                  "    console.log('- User-Agent: Client identification and capabilities');",
+                  "    console.log('- Accept: Content negotiation preferences');",
+                  "    console.log('- Custom-Header: Application-specific metadata');",
+                  "    console.log('- X-Request-ID: Request correlation tracking');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Custom Headers Demo)",
+                "description": "Enhanced User-Agent for header demonstration"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain, application/json;q=0.9, */*;q=0.8",
+                "description": "Content negotiation with quality factors"
+              },
+              {
+                "key": "Custom-Header",
+                "value": "Educational-Example",
+                "description": "Custom header for educational HTTP header usage demonstration"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{requestId}}",
+                "description": "Request correlation identifier for tracing"
+              },
+              {
+                "key": "X-Educational-Purpose",
+                "value": "Header-Processing-Demo",
+                "description": "Educational metadata header"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check - Basic Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test status code is 200 for healthy system status",
+                  "pm.test(\"Status code is 200 for healthy status\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test response is valid JSON format",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Test health status field exists in response",
+                  "pm.test(\"Health status field exists\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['healthy', 'degraded', 'unhealthy']);",
+                  "});",
+                  "",
+                  "// Test timestamp format is ISO 8601",
+                  "pm.test(\"Timestamp format is ISO 8601\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    const timestampRegex = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/;",
+                  "    pm.expect(jsonData.timestamp).to.match(timestampRegex);",
+                  "});",
+                  "",
+                  "// Test health score is between 0-100",
+                  "pm.test(\"Health score is between 0-100\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('score');",
+                  "    pm.expect(jsonData.score).to.be.at.least(0).and.at.most(100);",
+                  "});",
+                  "",
+                  "// Educational analysis of health endpoint structure",
+                  "pm.test(\"Educational health endpoint analysis\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('Health endpoint provides comprehensive system information:');",
+                  "    console.log(`- Overall status: ${jsonData.status}`);",
+                  "    console.log(`- Health score: ${jsonData.score}/100`);",
+                  "    console.log(`- Server info: ${jsonData.server ? 'present' : 'missing'}`);",
+                  "    console.log(`- System metrics: ${jsonData.system ? 'present' : 'missing'}`);",
+                  "    console.log(`- Performance data: ${jsonData.performance ? 'present' : 'missing'}`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "description": "Standard User-Agent for health check requests"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON content type preference for health endpoint"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "description": "Requests designed to test various error conditions and server error handling with educational error analysis",
+      "item": [
+        {
+          "name": "404 Not Found - Invalid Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test appropriate 404 error status code",
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "// Test error response format and content",
+                  "pm.test(\"Error response has appropriate content\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Test security headers are present in error responses",
+                  "pm.test(\"Security headers present in error response\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.equal('DENY');",
+                  "});",
+                  "",
+                  "// Educational analysis of 404 error handling",
+                  "pm.test(\"Educational 404 error analysis\", function () {",
+                  "    console.log('404 Not Found Error Analysis:');",
+                  "    console.log('- Error type: Client Error (4xx series)');",
+                  "    console.log('- Meaning: Requested resource does not exist');",
+                  "    console.log('- Common causes: Invalid URL path, typos in endpoint');",
+                  "    console.log('- Client handling: Check URL path and verify endpoint availability');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "description": "Standard User-Agent for error scenario testing"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain, */*",
+                "description": "Accept header for error response content"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invalid-endpoint",
+              "host": ["{{baseUrl}}"],
+              "path": ["invalid-endpoint"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "405 Method Not Allowed - POST to Hello",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test appropriate 405 error status code",
+                  "pm.test(\"Status code is 405 Method Not Allowed\", function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});",
+                  "",
+                  "// Test Allow header presence for supported methods",
+                  "pm.test(\"Allow header indicates supported methods\", function () {",
+                  "    // Note: Server may or may not include Allow header",
+                  "    const allowHeader = pm.response.headers.get('Allow');",
+                  "    if (allowHeader) {",
+                  "        pm.expect(allowHeader).to.include('GET');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Educational analysis of 405 method not allowed error",
+                  "pm.test(\"Educational 405 error analysis\", function () {",
+                  "    console.log('405 Method Not Allowed Error Analysis:');",
+                  "    console.log('- Error type: Client Error (4xx series)');",
+                  "    console.log('- Meaning: HTTP method not supported for this endpoint');",
+                  "    console.log('- Common causes: Using POST instead of GET, wrong HTTP verb');",
+                  "    console.log('- Client handling: Use supported HTTP methods (GET for /hello)');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "description": "User-Agent for method not allowed testing"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Content-Type for POST request body"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"message\": \"This should cause 405 error\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "405 Method Not Allowed - PUT to Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test appropriate 405 error status code for PUT method",
+                  "pm.test(\"Status code is 405 Method Not Allowed\", function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});",
+                  "",
+                  "// Test error response provides meaningful feedback",
+                  "pm.test(\"Error response provides feedback\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Educational comparison of different method errors",
+                  "pm.test(\"Educational method validation analysis\", function () {",
+                  "    console.log('HTTP Method Validation Analysis:');",
+                  "    console.log('- Health endpoint only supports GET method');",
+                  "    console.log('- PUT method typically used for resource updates');",
+                  "    console.log('- Server correctly rejects unsupported methods');",
+                  "    console.log('- Consistent error handling across endpoints');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}}",
+                "description": "User-Agent for PUT method testing"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "Content-Type for PUT request"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"health\": \"update\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Performance Testing",
+      "description": "Requests configured for performance measurement, response time analysis, and load testing patterns",
+      "item": [
+        {
+          "name": "Performance - Hello Endpoint Timing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response time measurement and analysis",
+                  "pm.test(\"Response time under 100ms threshold\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(100);",
+                  "});",
+                  "",
+                  "// Test successful response for performance baseline",
+                  "pm.test(\"Successful response for performance test\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.text()).to.equal('Hello world');",
+                  "});",
+                  "",
+                  "// Measure and log performance metrics",
+                  "pm.test(\"Performance metrics analysis\", function () {",
+                  "    const responseTime = pm.response.responseTime;",
+                  "    const contentLength = pm.response.headers.get('Content-Length');",
+                  "    ",
+                  "    console.log('Performance Metrics Analysis:');",
+                  "    console.log(`- Response time: ${responseTime}ms`);",
+                  "    console.log(`- Content length: ${contentLength || 'not specified'} bytes`);",
+                  "    console.log(`- Performance rating: ${responseTime < 50 ? 'Excellent' : responseTime < 100 ? 'Good' : 'Acceptable'}`);",
+                  "    ",
+                  "    // Store performance data in collection variables",
+                  "    pm.collectionVariables.set('lastResponseTime', responseTime);",
+                  "    pm.collectionVariables.set('performanceTimestamp', new Date().toISOString());",
+                  "});",
+                  "",
+                  "// Validate performance consistency",
+                  "pm.test(\"Performance consistency check\", function () {",
+                  "    const currentTime = pm.response.responseTime;",
+                  "    const lastTime = pm.collectionVariables.get('lastResponseTime');",
+                  "    ",
+                  "    if (lastTime) {",
+                  "        const variability = Math.abs(currentTime - lastTime);",
+                  "        console.log(`Response time variability: ${variability}ms`);",
+                  "        pm.expect(variability).to.be.below(200); // Allow 200ms variability",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Performance Test)",
+                "description": "Performance testing User-Agent"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain",
+                "description": "Content preference for performance testing"
+              },
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "description": "Disable caching for accurate performance measurement"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Performance - Health Endpoint Timing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test health endpoint performance characteristics",
+                  "pm.test(\"Health endpoint response time acceptable\", function () {",
+                  "    // Health endpoint may be slower due to comprehensive checks",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "// Test successful health response",
+                  "pm.test(\"Health response successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Comprehensive performance analysis for health endpoint",
+                  "pm.test(\"Health endpoint performance analysis\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const responseTime = pm.response.responseTime;",
+                  "    const executionTime = jsonData.execution_time_ms;",
+                  "    ",
+                  "    console.log('Health Endpoint Performance Analysis:');",
+                  "    console.log(`- Total response time: ${responseTime}ms`);",
+                  "    console.log(`- Server execution time: ${executionTime}ms`);",
+                  "    console.log(`- Network overhead: ${responseTime - executionTime}ms`);",
+                  "    console.log(`- Health check components: ${Object.keys(jsonData).length}`);",
+                  "    ",
+                  "    // Performance categorization",
+                  "    if (responseTime < 100) {",
+                  "        console.log('- Performance category: Excellent');",
+                  "    } else if (responseTime < 200) {",
+                  "        console.log('- Performance category: Good');",
+                  "    } else if (responseTime < 500) {",
+                  "        console.log('- Performance category: Acceptable');",
+                  "    } else {",
+                  "        console.log('- Performance category: Needs optimization');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Validate health metrics performance thresholds",
+                  "pm.test(\"Health metrics within performance bounds\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    if (jsonData.performance) {",
+                  "        const perfData = jsonData.performance;",
+                  "        console.log('Server-side performance metrics:');",
+                  "        console.log(`- Response time: ${perfData.response_time_ms}ms`);",
+                  "        console.log(`- Throughput: ${perfData.throughput_rps} RPS`);",
+                  "        console.log(`- Error rate: ${perfData.error_rate_percent}%`);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Health Performance Test)",
+                "description": "Performance testing User-Agent for health endpoint"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON preference for health endpoint performance testing"
+              },
+              {
+                "key": "Cache-Control",
+                "value": "no-cache",
+                "description": "Disable caching for accurate performance measurement"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Security Validation",
+      "description": "Requests focused on security header validation, security testing, and web security best practices",
+      "item": [
+        {
+          "name": "Security Headers - Hello Endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test X-Content-Type-Options security header",
+                  "pm.test(\"X-Content-Type-Options header is nosniff\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+                  "});",
+                  "",
+                  "// Test X-Frame-Options security header",
+                  "pm.test(\"X-Frame-Options header is DENY\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.equal('DENY');",
+                  "});",
+                  "",
+                  "// Test Content-Type header accuracy",
+                  "pm.test(\"Content-Type header is accurate\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/plain');",
+                  "});",
+                  "",
+                  "// Comprehensive security header analysis",
+                  "pm.test(\"Security header analysis\", function () {",
+                  "    const headers = pm.response.headers;",
+                  "    let securityScore = 0;",
+                  "    const maxScore = 100;",
+                  "    ",
+                  "    console.log('Security Header Analysis:');",
+                  "    ",
+                  "    // X-Content-Type-Options analysis",
+                  "    if (headers.get('X-Content-Type-Options') === 'nosniff') {",
+                  "        securityScore += 30;",
+                  "        console.log('✓ X-Content-Type-Options: nosniff (prevents MIME sniffing)');",
+                  "    } else {",
+                  "        console.log('✗ X-Content-Type-Options: missing or incorrect');",
+                  "    }",
+                  "    ",
+                  "    // X-Frame-Options analysis",
+                  "    if (headers.get('X-Frame-Options') === 'DENY') {",
+                  "        securityScore += 30;",
+                  "        console.log('✓ X-Frame-Options: DENY (prevents clickjacking)');",
+                  "    } else {",
+                  "        console.log('✗ X-Frame-Options: missing or incorrect');",
+                  "    }",
+                  "    ",
+                  "    // Content-Type analysis",
+                  "    if (headers.get('Content-Type')?.includes('text/plain')) {",
+                  "        securityScore += 20;",
+                  "        console.log('✓ Content-Type: properly specified');",
+                  "    } else {",
+                  "        console.log('✗ Content-Type: missing or incorrect');",
+                  "    }",
+                  "    ",
+                  "    // Additional security headers check",
+                  "    const additionalHeaders = ['X-XSS-Protection', 'Strict-Transport-Security', 'Content-Security-Policy'];",
+                  "    additionalHeaders.forEach(header => {",
+                  "        if (headers.get(header)) {",
+                  "            securityScore += 5;",
+                  "            console.log(`✓ ${header}: present`);",
+                  "        }",
+                  "    });",
+                  "    ",
+                  "    console.log(`Security Score: ${securityScore}/${maxScore}`);",
+                  "    pm.collectionVariables.set('securityScore', securityScore);",
+                  "});",
+                  "",
+                  "// Educational security analysis",
+                  "pm.test(\"Educational security insights\", function () {",
+                  "    console.log('Web Security Best Practices:');",
+                  "    console.log('- X-Content-Type-Options prevents browsers from guessing content types');",
+                  "    console.log('- X-Frame-Options prevents embedding in malicious frames');",
+                  "    console.log('- Proper Content-Type prevents content type confusion');",
+                  "    console.log('- Security headers provide defense-in-depth protection');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Security Test)",
+                "description": "Security testing User-Agent"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain",
+                "description": "Content preference for security testing"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Security Headers - Health Endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test comprehensive security headers for health endpoint",
+                  "pm.test(\"Security headers present on health endpoint\", function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.equal('DENY');",
+                  "});",
+                  "",
+                  "// Test JSON content type security",
+                  "pm.test(\"JSON Content-Type header is secure\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "// Security validation for sensitive health data",
+                  "pm.test(\"Health endpoint security validation\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    console.log('Health Endpoint Security Analysis:');",
+                  "    console.log('- Endpoint exposes system information for monitoring');",
+                  "    console.log('- Security headers protect against common attacks');",
+                  "    console.log('- JSON content type properly specified');",
+                  "    ",
+                  "    // Check for potentially sensitive information exposure",
+                  "    const sensitiveFields = ['password', 'secret', 'token', 'key'];",
+                  "    const responseText = JSON.stringify(jsonData).toLowerCase();",
+                  "    ",
+                  "    sensitiveFields.forEach(field => {",
+                  "        if (responseText.includes(field)) {",
+                  "            console.log(`⚠ Potentially sensitive field detected: ${field}`);",
+                  "        }",
+                  "    });",
+                  "    ",
+                  "    console.log('- Health data appears properly sanitized');",
+                  "});",
+                  "",
+                  "// Consistent security policy validation",
+                  "pm.test(\"Consistent security policy across endpoints\", function () {",
+                  "    const currentScore = pm.collectionVariables.get('securityScore') || 0;",
+                  "    let healthSecurityScore = 0;",
+                  "    ",
+                  "    // Calculate security score for health endpoint",
+                  "    if (pm.response.headers.get('X-Content-Type-Options') === 'nosniff') {",
+                  "        healthSecurityScore += 30;",
+                  "    }",
+                  "    if (pm.response.headers.get('X-Frame-Options') === 'DENY') {",
+                  "        healthSecurityScore += 30;",
+                  "    }",
+                  "    if (pm.response.headers.get('Content-Type')?.includes('application/json')) {",
+                  "        healthSecurityScore += 20;",
+                  "    }",
+                  "    ",
+                  "    console.log(`Health endpoint security score: ${healthSecurityScore}/100`);",
+                  "    console.log('Security policy consistency: ' + (Math.abs(currentScore - healthSecurityScore) < 20 ? 'Good' : 'Needs review'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Security Test)",
+                "description": "Security testing User-Agent for health endpoint"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "JSON preference for health endpoint security testing"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Educational Examples",
+      "description": "Educational requests demonstrating various HTTP concepts, patterns, and client-server interaction techniques",
+      "item": [
+        {
+          "name": "HTTP Methods - OPTIONS Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test OPTIONS method response",
+                  "pm.test(\"OPTIONS request handling\", function () {",
+                  "    // Server may respond with 200, 204, or 405 depending on implementation",
+                  "    pm.expect([200, 204, 405]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "// Analyze Allow header if present",
+                  "pm.test(\"HTTP methods discovery\", function () {",
+                  "    const allowHeader = pm.response.headers.get('Allow');",
+                  "    ",
+                  "    console.log('HTTP Methods Discovery Analysis:');",
+                  "    console.log('- OPTIONS method enables HTTP method discovery');",
+                  "    console.log('- Used for CORS preflight requests in browsers');",
+                  "    ",
+                  "    if (allowHeader) {",
+                  "        console.log(`- Allowed methods: ${allowHeader}`);",
+                  "        pm.expect(allowHeader).to.include('GET');",
+                  "    } else {",
+                  "        console.log('- Allow header not provided by server');",
+                  "    }",
+                  "    ",
+                  "    console.log('- Educational value: Understanding HTTP method semantics');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (OPTIONS Demo)",
+                "description": "Educational OPTIONS request User-Agent"
+              },
+              {
+                "key": "Origin",
+                "value": "http://localhost:8080",
+                "description": "Origin header for CORS demonstration"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connection Management - Keep-Alive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful response with keep-alive",
+                  "pm.test(\"Keep-alive request successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Analyze connection management headers",
+                  "pm.test(\"Connection management analysis\", function () {",
+                  "    const connectionHeader = pm.response.headers.get('Connection');",
+                  "    const keepAliveHeader = pm.response.headers.get('Keep-Alive');",
+                  "    ",
+                  "    console.log('HTTP Connection Management Analysis:');",
+                  "    console.log('- Keep-alive enables connection reuse for multiple requests');",
+                  "    console.log('- Reduces TCP connection overhead and improves performance');",
+                  "    ",
+                  "    if (connectionHeader) {",
+                  "        console.log(`- Connection header: ${connectionHeader}`);",
+                  "    }",
+                  "    ",
+                  "    if (keepAliveHeader) {",
+                  "        console.log(`- Keep-Alive parameters: ${keepAliveHeader}`);",
+                  "    } else {",
+                  "        console.log('- Keep-Alive parameters not specified by server');",
+                  "    }",
+                  "    ",
+                  "    console.log('- Educational insight: Connection pooling optimizes client performance');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Keep-Alive Demo)",
+                "description": "Educational keep-alive demonstration User-Agent"
+              },
+              {
+                "key": "Connection",
+                "value": "keep-alive",
+                "description": "Keep-alive connection management request"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain",
+                "description": "Content preference for keep-alive demo"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Content Negotiation - Accept Headers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test content negotiation response",
+                  "pm.test(\"Content negotiation successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Analyze content negotiation results",
+                  "pm.test(\"Content negotiation analysis\", function () {",
+                  "    const acceptHeader = 'text/plain, application/json;q=0.9, */*;q=0.8';",
+                  "    const contentType = pm.response.headers.get('Content-Type');",
+                  "    ",
+                  "    console.log('HTTP Content Negotiation Analysis:');",
+                  "    console.log('- Client specifies content preferences via Accept header');",
+                  "    console.log('- Quality factors (q=) indicate preference priorities');",
+                  "    console.log(`- Client requested: ${acceptHeader}`);",
+                  "    console.log(`- Server responded with: ${contentType}`);",
+                  "    ",
+                  "    // Analyze negotiation result",
+                  "    if (contentType?.includes('text/plain')) {",
+                  "        console.log('- Negotiation result: Server selected highest priority format');",
+                  "    } else {",
+                  "        console.log('- Negotiation result: Server used default content type');",
+                  "    }",
+                  "    ",
+                  "    console.log('- Educational value: Understanding HTTP content negotiation');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "{{userAgent}} (Content Negotiation Demo)",
+                "description": "Content negotiation demonstration User-Agent"
+              },
+              {
+                "key": "Accept",
+                "value": "text/plain, application/json;q=0.9, */*;q=0.8",
+                "description": "Content negotiation with quality factors"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en-US,en;q=0.9",
+                "description": "Language preference for content negotiation"
+              },
+              {
+                "key": "Accept-Encoding",
+                "value": "gzip, deflate, br",
+                "description": "Encoding preferences for compression"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hello",
+              "host": ["{{baseUrl}}"],
+              "path": ["hello"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script for educational logging and request preparation",
+          "console.log('=== Node.js Tutorial HTTP Server API Request ===');",
+          "console.log('Collection: ' + pm.info.collectionName);",
+          "console.log('Request: ' + pm.info.requestName);",
+          "console.log('Method: ' + pm.request.method);",
+          "console.log('URL: ' + pm.request.url);",
+          "console.log('Timestamp: ' + new Date().toISOString());",
+          "",
+          "// Generate unique request ID for correlation",
+          "if (!pm.collectionVariables.get('requestId')) {",
+          "    pm.collectionVariables.set('requestId', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "",
+          "// Educational pre-request analysis",
+          "console.log('Educational Context:');",
+          "console.log('- This collection demonstrates HTTP client testing patterns');",
+          "console.log('- Each request includes comprehensive test scripts');",
+          "console.log('- Response analysis provides educational insights');",
+          "console.log('- Security and performance validation included');",
+          "console.log('=========================================');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for educational summary and collection-level analysis",
+          "console.log('=== Request Completed ===');",
+          "console.log('Response Status: ' + pm.response.code + ' ' + pm.response.status);",
+          "console.log('Response Time: ' + pm.response.responseTime + 'ms');",
+          "console.log('Response Size: ' + pm.response.responseSize + ' bytes');",
+          "",
+          "// Update collection statistics",
+          "let totalRequests = pm.collectionVariables.get('totalRequests') || 0;",
+          "let successfulRequests = pm.collectionVariables.get('successfulRequests') || 0;",
+          "",
+          "totalRequests++;",
+          "if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "    successfulRequests++;",
+          "}",
+          "",
+          "pm.collectionVariables.set('totalRequests', totalRequests);",
+          "pm.collectionVariables.set('successfulRequests', successfulRequests);",
+          "",
+          "// Calculate success rate",
+          "const successRate = ((successfulRequests / totalRequests) * 100).toFixed(1);",
+          "pm.collectionVariables.set('successRate', successRate);",
+          "",
+          "console.log('Collection Statistics:');",
+          "console.log('- Total Requests: ' + totalRequests);",
+          "console.log('- Successful Requests: ' + successfulRequests);",
+          "console.log('- Success Rate: ' + successRate + '%');",
+          "console.log('========================');"
+        ]
+      }
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  }
+}

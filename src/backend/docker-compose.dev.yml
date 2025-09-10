@@ -1,0 +1,385 @@
+# =============================================================================
+# Node.js Tutorial HTTP Server - Development Docker Compose Configuration
+# =============================================================================
+# Educational Docker Compose configuration demonstrating containerized Node.js
+# development environment with file watching, hot reloading, debugging support,
+# and development workflow optimization. Provides comprehensive development
+# tooling while maintaining zero external dependencies and educational clarity.
+#
+# Development Features:
+# - Live source code mounting for immediate file change reflection
+# - Automatic server restart on code changes through development script
+# - Node.js inspector debugging integration with IDE support
+# - Enhanced development logging with debug level and colored output
+# - Development-optimized resource allocation and performance settings
+# - Cross-platform development support (Windows, macOS, Linux)
+# - Container isolation with development networking and volume management
+#
+# Educational Value:
+# - Demonstrates Docker Compose development environment best practices
+# - Shows volume mounting strategies for live code editing workflows
+# - Illustrates debugging integration between containers and host IDEs
+# - Teaches development vs production configuration separation
+# - Provides foundation for container-based development workflows
+#
+# Dependencies: Docker Compose v2.20+, Docker Engine v20.10+
+# Node.js Version: 22.x LTS (Active) in Alpine Linux container
+# Compose File Version: 3.8 (Docker Compose specification)
+# =============================================================================
+
+# Docker Compose specification version for advanced feature support and compatibility
+# Version 3.8 provides comprehensive networking, volume, and service management
+# capabilities required for educational development environment orchestration
+version: '3.8'
+
+# =============================================================================
+# DEVELOPMENT SERVICES CONFIGURATION
+# =============================================================================
+# Single service architecture focused on educational Node.js HTTP server
+# development with comprehensive development tooling and workflow optimization
+
+services:
+  # -------------------------------------------------------------------------
+  # Main Application Service - Node.js Tutorial HTTP Server
+  # -------------------------------------------------------------------------
+  # Primary development service providing HTTP server functionality with
+  # enhanced development experience including file watching, debugging,
+  # and development-optimized configuration
+  app:
+    # Container identification and management configuration
+    container_name: nodejs-tutorial-dev-app
+    
+    # Build configuration using existing Dockerfile with development target
+    # Leverages multi-stage Docker build for development-specific optimizations
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        - NODE_ENV=development
+        - BUILD_MODE=development
+    
+    # Development image tagging for local identification and management
+    image: nodejs-tutorial:dev
+    
+    # -------------------------------------------------------------------------
+    # NETWORK PORT CONFIGURATION
+    # -------------------------------------------------------------------------
+    # Port mappings for development access including HTTP server and debugging
+    ports:
+      # HTTP server port for development traffic and testing
+      # Maps container port 3000 to host port 3000 for direct access
+      - "3000:3000"
+      
+      # Node.js inspector debugging port for IDE integration
+      # Enables remote debugging through VS Code, Chrome DevTools, etc.
+      - "9229:9229"
+    
+    # -------------------------------------------------------------------------
+    # DEVELOPMENT ENVIRONMENT VARIABLES
+    # -------------------------------------------------------------------------
+    # Comprehensive environment configuration optimized for development
+    # workflow with enhanced logging, debugging, and monitoring capabilities
+    environment:
+      # Core application environment configuration
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0  # Bind to all interfaces for container networking
+      
+      # Enhanced development logging configuration
+      LOG_LEVEL: debug
+      ENABLE_CONSOLE_LOGGING: true
+      ENABLE_FILE_LOGGING: false  # Disable file logging in development
+      ENABLE_REQUEST_LOGGING: true
+      ENABLE_ERROR_STACK_TRACES: true
+      
+      # Development performance and monitoring settings
+      TIMEOUT: 120000  # 2 minute timeout for development debugging
+      KEEP_ALIVE_TIMEOUT: 5000
+      ENABLE_PERFORMANCE_MONITORING: true
+      ENABLE_HEALTH_ENDPOINT: true
+      
+      # Security headers enabled for development security testing
+      SECURITY_HEADERS_ENABLED: true
+      
+      # Development-specific debugging and tooling
+      NODEMON_WATCH: true  # Enable file watching for auto-restart
+      DEBUG: '*'  # Enable all debug output for comprehensive logging
+    
+    # -------------------------------------------------------------------------
+    # VOLUME MOUNT CONFIGURATION
+    # -------------------------------------------------------------------------
+    # Development volume mounting strategy for live code editing and
+    # performance optimization with node_modules isolation
+    volumes:
+      # Source code bind mount for live code editing and hot reloading
+      # Enables immediate reflection of file changes without container rebuild
+      - ./:/app
+      
+      # Node modules named volume to prevent host/container conflicts
+      # Optimizes performance and avoids cross-platform compatibility issues
+      - nodejs-tutorial-dev-node-modules:/app/node_modules
+      
+      # Development logs directory for debugging and monitoring
+      # Provides access to application logs from host system
+      - ./logs:/app/logs
+    
+    # -------------------------------------------------------------------------
+    # CONTAINER EXECUTION CONFIGURATION
+    # -------------------------------------------------------------------------
+    # Development command override using enhanced development script
+    # Provides file watching, auto-restart, and interactive development features
+    command: ["node", "--inspect=0.0.0.0:9229", "/app/scripts/dev.js"]
+    
+    # Working directory for application execution context
+    working_dir: /app
+    
+    # Security: Run as non-root user following container security best practices
+    user: node
+    
+    # Container restart policy for development stability
+    restart: unless-stopped
+    
+    # -------------------------------------------------------------------------
+    # HEALTH CHECK CONFIGURATION
+    # -------------------------------------------------------------------------
+    # Container health monitoring using custom health check script
+    # Enables automated health validation and container management
+    healthcheck:
+      test: ["CMD", "node", "/app/scripts/docker-healthcheck.js"]
+      interval: 10s      # Fast health checks for development feedback
+      timeout: 5s        # Quick timeout for responsive development
+      retries: 3         # Multiple retries for transient development issues
+      start_period: 5s   # Reduced start period for faster development cycles
+    
+    # -------------------------------------------------------------------------
+    # RESOURCE LIMITS AND OPTIMIZATION
+    # -------------------------------------------------------------------------
+    # Development-optimized resource allocation for responsive development
+    # experience with sufficient resources for debugging and monitoring
+    deploy:
+      resources:
+        limits:
+          memory: 512m      # Adequate memory for development debugging
+          cpus: '1.0'       # Full CPU core for development performance
+          pids: 200         # Process limit for container security
+    
+    # Security hardening while maintaining development functionality
+    security_opt:
+      - no-new-privileges:true
+    
+    # Container filesystem configuration
+    read_only: false  # Allow file modifications for development workflow
+    
+    # Temporary filesystem for cache and temporary development files
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    
+    # -------------------------------------------------------------------------
+    # SERVICE DEPENDENCIES
+    # -------------------------------------------------------------------------
+    # No external service dependencies for educational simplicity
+    # Application demonstrates standalone Node.js server capabilities
+    depends_on: []
+    
+    # -------------------------------------------------------------------------
+    # NETWORK CONFIGURATION
+    # -------------------------------------------------------------------------
+    # Development networking using custom bridge network for isolation
+    networks:
+      - nodejs-tutorial-dev-network
+    
+    # -------------------------------------------------------------------------
+    # CONTAINER LABELS AND METADATA
+    # -------------------------------------------------------------------------
+    # Comprehensive labeling for container identification and management
+    labels:
+      # Service identification labels
+      com.nodejs-tutorial.service: app
+      com.nodejs-tutorial.environment: development
+      com.nodejs-tutorial.description: "Node.js tutorial HTTP server development environment"
+      com.nodejs-tutorial.version: "1.0.0"
+      com.nodejs-tutorial.maintainer: "Node.js Tutorial Team"
+      
+      # Development feature labels
+      com.nodejs-tutorial.hot-reload: enabled
+      com.nodejs-tutorial.debugging: enabled
+      com.nodejs-tutorial.file-watching: enabled
+      com.nodejs-tutorial.enhanced-logging: enabled
+      
+      # Educational and documentation labels
+      com.nodejs-tutorial.educational: true
+      com.nodejs-tutorial.zero-dependencies: true
+      com.nodejs-tutorial.built-in-modules: true
+
+# =============================================================================
+# DEVELOPMENT NETWORKS CONFIGURATION
+# =============================================================================
+# Custom bridge network for development environment isolation and debugging
+# optimization with container-to-container communication support
+
+networks:
+  # Development network with optimized settings for debugging and development
+  nodejs-tutorial-dev-network:
+    driver: bridge
+    driver_opts:
+      # Custom bridge name for network identification
+      com.docker.network.bridge.name: nodejs-tutorial-dev-br
+      # Standard MTU for optimal network performance
+      com.docker.network.driver.mtu: "1500"
+    
+    # IP address management for predictable container networking
+    ipam:
+      config:
+        # Development subnet allocation
+        - subnet: "172.21.0.0/16"
+    
+    # Network identification and management labels
+    labels:
+      com.nodejs-tutorial.network: development
+      com.nodejs-tutorial.purpose: "Development environment networking with debugging support"
+      com.nodejs-tutorial.isolation: container
+
+# =============================================================================
+# DEVELOPMENT VOLUMES CONFIGURATION
+# =============================================================================
+# Named volumes for development performance optimization and node_modules
+# isolation to prevent host/container filesystem conflicts
+
+volumes:
+  # Node modules volume for dependency isolation and performance optimization
+  nodejs-tutorial-dev-node-modules:
+    driver: local
+    labels:
+      com.nodejs-tutorial.volume: node-modules
+      com.nodejs-tutorial.purpose: "Development node_modules isolation and performance optimization"
+      com.nodejs-tutorial.performance: optimized
+      com.nodejs-tutorial.conflict-prevention: enabled
+
+# =============================================================================
+# DEVELOPMENT USAGE INSTRUCTIONS
+# =============================================================================
+# 
+# STARTUP COMMANDS:
+# -----------------
+# Start development environment (foreground with logs):
+#   docker-compose -f docker-compose.dev.yml up
+# 
+# Start development environment (detached mode):
+#   docker-compose -f docker-compose.dev.yml up -d
+# 
+# Build development image with latest changes:
+#   docker-compose -f docker-compose.dev.yml build
+# 
+# Build and start with fresh containers:
+#   docker-compose -f docker-compose.dev.yml up --build
+#
+# DEVELOPMENT COMMANDS:
+# --------------------
+# Access container shell for debugging:
+#   docker-compose -f docker-compose.dev.yml exec app /bin/sh
+# 
+# Follow application logs:
+#   docker-compose -f docker-compose.dev.yml logs -f app
+# 
+# Restart application service:
+#   docker-compose -f docker-compose.dev.yml restart app
+# 
+# Stop development environment:
+#   docker-compose -f docker-compose.dev.yml down
+# 
+# Stop and remove volumes (fresh start):
+#   docker-compose -f docker-compose.dev.yml down -v
+#
+# DEBUGGING INTEGRATION:
+# ---------------------
+# IDE Debugging:
+#   - Connect debugger to localhost:9229
+#   - Supported: VS Code, WebStorm, Chrome DevTools
+#   - Protocol: Node.js Inspector Protocol
+#
+# Testing Endpoints:
+#   - Hello endpoint: http://localhost:3000/hello
+#   - Health check: http://localhost:3000/health (if implemented)
+#   - Server status: Check container logs or health check output
+#
+# FILE WATCHING:
+# -------------
+# - Edit files directly on host system using your preferred IDE/editor
+# - Changes are immediately reflected in container through bind mount
+# - Development script automatically detects changes and restarts server
+# - No container rebuild required for source code changes
+#
+# VOLUME MANAGEMENT:
+# -----------------
+# - Source code: Bind mounted for live editing (./:/app)
+# - Node modules: Named volume for performance (nodejs-tutorial-dev-node-modules)
+# - Logs: Bind mounted for easy access (./logs:/app/logs)
+#
+# PERFORMANCE OPTIMIZATION:
+# ------------------------
+# - Named volume for node_modules prevents host/container I/O bottlenecks
+# - Fast health checks (10s interval) for responsive development feedback
+# - Adequate resource allocation (512MB RAM, 1 CPU) for debugging
+# - Optimized network configuration for development traffic
+#
+# TROUBLESHOOTING:
+# ---------------
+# If file changes don't trigger restart:
+#   - Check bind mount configuration: ./:/app
+#   - Verify file permissions (especially on Windows/macOS)
+#   - Ensure development script is running: scripts/dev.js
+#
+# If debugger connection fails:
+#   - Verify port 9229 is mapped: "9229:9229"
+#   - Check inspector binding: --inspect=0.0.0.0:9229
+#   - Ensure firewall allows localhost:9229 connections
+#
+# If container startup fails:
+#   - Check Docker Compose version (v2.20+ required)
+#   - Verify Dockerfile development target exists
+#   - Review container logs: docker-compose logs app
+#
+# For node_modules conflicts:
+#   - Remove and recreate volume: docker-compose down -v && docker-compose up
+#   - Check volume mount: nodejs-tutorial-dev-node-modules:/app/node_modules
+#   - Verify package.json changes trigger rebuild
+#
+# =============================================================================
+# EDUCATIONAL NOTES
+# =============================================================================
+#
+# DOCKER COMPOSE CONCEPTS DEMONSTRATED:
+# - Service definition with build configuration and development targeting
+# - Volume mounting strategies for development workflow optimization
+# - Network creation and isolation for container communication
+# - Environment variable configuration for development settings
+# - Port mapping for external access to containerized services
+# - Health check implementation for container lifecycle management
+# - Resource limits and security constraints for production readiness
+#
+# DEVELOPMENT WORKFLOW CONCEPTS:
+# - Live code editing with immediate container reflection
+# - Debugging integration between containerized app and host IDE
+# - File watching and automatic restart capabilities
+# - Development vs production configuration separation
+# - Container isolation with development networking
+# - Performance optimization through volume strategies
+#
+# NODE.JS CONTAINERIZATION CONCEPTS:
+# - Multi-stage Docker builds with development targets
+# - Node.js inspector debugging in containerized environments
+# - npm package management with container volume optimization
+# - Cross-platform development with consistent container environments
+# - Security best practices with non-root user execution
+# - Health monitoring and container lifecycle management
+#
+# BEST PRACTICES DEMONSTRATED:
+# - Separation of development and production configurations
+# - Comprehensive environment variable management
+# - Security hardening with appropriate container constraints
+# - Performance optimization for development responsiveness
+# - Comprehensive documentation and usage instructions
+# - Educational labeling and metadata for learning purposes
+#
+# =============================================================================
