@@ -1,0 +1,100 @@
+{
+  "name": "nodejs-hello-tutorial",
+  "version": "1.0.0",
+  "description": "Educational Node.js HTTP server tutorial demonstrating fundamental web server concepts with a single /hello endpoint that returns 'Hello world'. Built using zero external dependencies and Node.js built-in modules to teach core HTTP server development principles.",
+  "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:enhanced": "node scripts/start.js",
+    "dev": "node scripts/dev.js",
+    "test": "node scripts/test.js",
+    "test:unit": "node --test test/unit/**/*.test.js",
+    "test:integration": "node --test test/integration/**/*.test.js",
+    "test:e2e": "node --test test/e2e/**/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/**/*.test.js",
+    "test:watch": "node scripts/test.js --watch",
+    "health-check": "node scripts/health-check.js",
+    "lint": "echo 'No external linting dependencies - using Node.js built-in syntax validation'",
+    "audit": "npm audit --audit-level moderate",
+    "docker:build": "docker build -t nodejs-hello-tutorial .",
+    "docker:run": "docker run -p 3000:3000 nodejs-hello-tutorial",
+    "docker:dev": "docker run -p 3000:3000 -v $(pwd):/app nodejs-hello-tutorial npm run dev",
+    "clean": "rm -rf logs/* temp/* coverage/*"
+  },
+  "keywords": [
+    "nodejs",
+    "tutorial",
+    "http-server",
+    "educational",
+    "hello-world",
+    "web-server",
+    "learning",
+    "zero-dependencies",
+    "built-in-modules",
+    "beginner-friendly",
+    "javascript",
+    "server-development",
+    "api-basics",
+    "backend-tutorial"
+  ],
+  "author": {
+    "name": "Node.js Tutorial Project",
+    "email": "tutorial@example.com",
+    "url": "https://github.com/tutorial/nodejs-hello-tutorial"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutorial/nodejs-hello-tutorial.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tutorial/nodejs-hello-tutorial/issues"
+  },
+  "homepage": "https://github.com/tutorial/nodejs-hello-tutorial#readme",
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "optionalDependencies": {},
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "server.js",
+    "lib/",
+    "config/",
+    "middleware/",
+    "security/",
+    "monitoring/",
+    "utils/",
+    "scripts/",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "directories": {
+    "lib": "lib",
+    "test": "test",
+    "doc": "docs"
+  },
+  "preferGlobal": false,
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "config": {
+    "port": "3000",
+    "host": "127.0.0.1",
+    "environment": "development"
+  }
+}
