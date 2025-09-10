@@ -1,0 +1,322 @@
+# Node.js Tutorial HTTP Server - Git Ignore Configuration
+# Educational Node.js application with single /hello endpoint
+# Excludes generated files, dependencies, and sensitive data from version control
+
+# =============================================================================
+# Node.js Dependencies and Package Management
+# =============================================================================
+# Package manager generated files and dependency directories that should be 
+# regenerated during deployment rather than tracked in version control
+
+# Core dependency directories
+node_modules/
+.pnpm/
+.npm/
+.yarn/
+.yarnrc
+
+# Package manager lock files - typically regenerated in different environments
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Package manager debug and error logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# npm cache and temporary directories
+.npm/
+.npmrc.local
+
+# =============================================================================
+# Environment Configuration and Secrets
+# =============================================================================
+# Prevents sensitive environment variables and configuration secrets from being 
+# committed to version control - critical for security compliance
+
+# Environment variable files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.backup
+*.env
+
+# Configuration files that may contain sensitive data
+config.local.js
+config.production.js
+*.config.local.*
+
+# =============================================================================
+# Generated Files and Build Artifacts
+# =============================================================================
+# Excludes compiled, bundled, or generated files that can be recreated from 
+# source code during build processes
+
+# Build output directories
+dist/
+build/
+out/
+.output/
+public/build/
+
+# Compiled assets
+*.tgz
+*.tar.gz
+*.zip
+*.rar
+
+# Cache directories
+.cache/
+.parcel-cache/
+.webpack-cache/
+.rollup-cache/
+.vite-cache/
+.turbo/
+
+# =============================================================================
+# Test Coverage and Reports
+# =============================================================================
+# Excludes test coverage reports and test artifacts while preserving directory 
+# structure for Node.js built-in test runner integration
+
+# Coverage directories and files
+coverage/
+!coverage/.gitkeep
+.coverage/
+*.lcov
+.nyc_output/
+coverage.json
+
+# Test result files
+test-results/
+junit.xml
+test-output/
+.jest/
+.vitest/
+
+# Node.js built-in test runner outputs
+*.tap
+
+# =============================================================================
+# Application Logs and Runtime Files
+# =============================================================================
+# Excludes runtime logs and process files while maintaining directory structure 
+# for logging infrastructure in production deployments
+
+# Log directories and files
+logs/
+!logs/.gitkeep
+*.log
+log/
+!log/.gitkeep
+
+# Runtime process files
+pids/
+*.pid
+*.seed
+*.pid.lock
+.lock-wscript
+
+# Runtime data
+runtime/
+!runtime/.gitkeep
+
+# =============================================================================
+# Temporary and Working Files
+# =============================================================================
+# Excludes temporary working files and cached content while preserving 
+# directory structure for development workflow automation
+
+# Temporary directories
+temp/
+!temp/.gitkeep
+tmp/
+!tmp/.gitkeep
+.tmp/
+.working/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+*.bak
+*.backup
+*.swp
+*.swo
+
+# OS generated temporary files
+.DS_Store?
+._*
+
+# =============================================================================
+# Development Tools and IDE Files
+# =============================================================================
+# Excludes IDE and editor specific files while optionally preserving shared 
+# development configuration for team collaboration
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim and Emacs
+*~
+.swp
+.swo
+*#
+
+# Eclipse
+.project
+.settings/
+.classpath
+
+# =============================================================================
+# Operating System Files
+# =============================================================================
+# Excludes OS-generated metadata and system files that vary across different 
+# operating systems for clean cross-platform development
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# Docker and Container Files
+# =============================================================================
+# Excludes local Docker configuration overrides while preserving main Docker 
+# configuration files for deployment flexibility
+
+# Docker override files
+docker-compose.override.yml
+docker-compose.local.yml
+.dockerignore.local
+
+# Docker build context ignores
+.docker/
+*.dockerfile.local
+
+# Container runtime files
+.container-*
+
+# =============================================================================
+# Security and Audit Files
+# =============================================================================
+# Prevents security certificates and audit files from being committed to 
+# version control - critical for preventing exposure of private keys
+
+# SSL certificates and keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+ssl/
+certs/
+!certs/.gitkeep
+
+# Security audit files
+.security/
+audit.json
+.audit-ci/
+security-report.*
+
+# Authentication tokens
+.auth
+auth.json
+tokens/
+
+# =============================================================================
+# Directory Structure Preservation
+# =============================================================================
+# Preserves .gitkeep files that maintain empty directory structure since Git 
+# does not track empty directories by default
+
+# Global rule to preserve .gitkeep files in all directories
+!**/.gitkeep
+
+# Specific preservation for critical directories
+!coverage/.gitkeep
+!logs/.gitkeep  
+!temp/.gitkeep
+!tmp/.gitkeep
+!runtime/.gitkeep
+!certs/.gitkeep
+
+# =============================================================================
+# Additional Development Files
+# =============================================================================
+# Additional patterns for comprehensive development workflow support
+
+# Documentation build artifacts
+docs/build/
+.docusaurus/
+
+# Dependency vulnerability databases
+.snyk
+
+# Runtime configuration
+.runtime
+.deployment
+
+# Archive files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.tar
+*.zip
+
+# Database files (if locally stored)
+*.db
+*.sqlite
+*.sqlite3
+
+# Binary files
+*.exe
+*.o
+*.so
+*.dylib
+*.dll
