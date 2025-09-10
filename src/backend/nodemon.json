@@ -1,0 +1,47 @@
+{
+  "watch": [
+    "server.js",
+    "lib/",
+    "config/",
+    "middleware/",
+    "security/", 
+    "monitoring/",
+    "utils/",
+    "package.json"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "node_modules/**/*",
+    "test/**/*",
+    "coverage/**/*",
+    "logs/**/*",
+    "temp/**/*",
+    ".git/**/*",
+    "*.test.js",
+    "*.spec.js",
+    ".env*",
+    "README.md",
+    "CHANGELOG.md",
+    "API.md",
+    "docs/**/*",
+    "examples/**/*",
+    "benchmarks/**/*"
+  ],
+  "delay": 1000,
+  "script": "server.js",
+  "restartable": "rs",
+  "colours": true,
+  "verbose": false,
+  "dump": false,
+  "events": {
+    "start": "echo 'Starting Node.js Tutorial HTTP Server in development mode...'",
+    "restart": "echo 'Restarting server due to file changes...'",
+    "crash": "echo 'Server crashed! Waiting for file changes to restart...'",
+    "quit": "echo 'Development server stopped.'"
+  },
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "legacyWatch": false,
+  "polling": false
+}
