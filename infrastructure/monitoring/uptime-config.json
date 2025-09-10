@@ -1,0 +1,317 @@
+{
+  "uptime_monitoring": {
+    "enabled": true,
+    "version": "2.0.0",
+    "description": "Comprehensive uptime monitoring configuration for Node.js tutorial HTTP server",
+    "check_interval_seconds": 60,
+    "timeout_seconds": 30,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 5,
+    "concurrent_checks": 5,
+    "user_agent": "NodeJS-Tutorial-Uptime-Monitor/2.0.0"
+  },
+  "monitoring_endpoints": {
+    "primary_endpoint": {
+      "name": "Hello World Endpoint",
+      "url": "http://127.0.0.1:3000/hello",
+      "method": "GET",
+      "expected_status_code": 200,
+      "expected_content": "Hello world",
+      "expected_content_type": "text/plain",
+      "timeout_ms": 5000,
+      "follow_redirects": false,
+      "validate_ssl": false,
+      "check_interval_seconds": 60,
+      "regions": ["local"]
+    },
+    "health_endpoint": {
+      "name": "Application Health Check",
+      "url": "http://127.0.0.1:3000/health",
+      "method": "GET",
+      "expected_status_code": 200,
+      "expected_content_type": "application/json",
+      "required_json_fields": ["status", "timestamp", "server"],
+      "expected_health_status": "healthy",
+      "timeout_ms": 10000,
+      "follow_redirects": false,
+      "validate_ssl": false,
+      "check_interval_seconds": 120,
+      "regions": ["local"]
+    },
+    "connectivity_test": {
+      "name": "Basic Connectivity Test",
+      "url": "http://127.0.0.1:3000/",
+      "method": "HEAD",
+      "expected_status_codes": [200, 404, 405],
+      "timeout_ms": 3000,
+      "follow_redirects": false,
+      "validate_ssl": false,
+      "check_interval_seconds": 30,
+      "regions": ["local"]
+    }
+  },
+  "external_services": {
+    "pingdom": {
+      "enabled": false,
+      "api_endpoint": "https://api.pingdom.com/api/3.1",
+      "check_type": "http",
+      "check_interval_minutes": 5,
+      "timeout_seconds": 30,
+      "regions": ["us", "eu", "asia"],
+      "notification_when_down": 1,
+      "notification_when_up": 1,
+      "tags": ["nodejs-tutorial", "uptime-monitoring", "educational"],
+      "custom_headers": {
+        "User-Agent": "Pingdom-NodeJS-Tutorial-Monitor"
+      }
+    },
+    "freshping": {
+      "enabled": false,
+      "api_endpoint": "https://statuspage.freshping.io/api",
+      "check_type": "HTTPS",
+      "check_interval_minutes": 1,
+      "timeout_seconds": 30,
+      "regions": ["us-east", "eu-central", "asia-pacific"],
+      "escalation_policy": "default",
+      "tags": ["nodejs-tutorial", "hello-world-app", "monitoring"]
+    },
+    "uptimerobot": {
+      "enabled": false,
+      "api_endpoint": "https://api.uptimerobot.com/v2",
+      "monitor_type": 1,
+      "check_interval_seconds": 300,
+      "timeout_seconds": 30,
+      "http_method": 1,
+      "alert_contacts": [],
+      "tags": "nodejs,tutorial,uptime",
+      "custom_headers": "User-Agent:UptimeRobot-NodeJS-Tutorial"
+    },
+    "statuscake": {
+      "enabled": false,
+      "api_endpoint": "https://app.statuscake.com/API",
+      "test_type": "HTTP",
+      "check_rate": 300,
+      "timeout_seconds": 40,
+      "confirmation": 2,
+      "trigger_rate": 5,
+      "contact_groups": [],
+      "tags": ["nodejs", "tutorial", "hello-world"]
+    },
+    "site24x7": {
+      "enabled": false,
+      "api_endpoint": "https://www.site24x7.com/api",
+      "monitor_type": "URL",
+      "check_frequency": 5,
+      "timeout_seconds": 30,
+      "location_template_id": "US",
+      "notification_profile_id": "",
+      "tags": ["nodejs-tutorial", "uptime-monitoring"]
+    }
+  },
+  "availability_thresholds": {
+    "response_time_ms": {
+      "excellent": 50,
+      "good": 100,
+      "acceptable": 200,
+      "poor": 500,
+      "critical": 1000,
+      "timeout_threshold": 30000
+    },
+    "uptime_percentage": {
+      "target": 99.9,
+      "warning": 99.5,
+      "critical": 99.0,
+      "minimum_acceptable": 95.0
+    },
+    "sla_targets": {
+      "monthly_uptime_percent": 99.9,
+      "quarterly_uptime_percent": 99.95,
+      "yearly_uptime_percent": 99.9,
+      "monthly_downtime_allowance_minutes": 43.2,
+      "quarterly_downtime_allowance_minutes": 129.6,
+      "yearly_downtime_allowance_minutes": 525.6
+    },
+    "status_determination": {
+      "consecutive_failures_for_down": 3,
+      "consecutive_successes_for_up": 2,
+      "degraded_response_time_threshold": 200,
+      "maintenance_mode_detection": true
+    }
+  },
+  "alerting_configuration": {
+    "enabled": false,
+    "notification_channels": ["console_log", "file_log"],
+    "alert_thresholds": {
+      "downtime_duration_minutes": {
+        "warning": 1,
+        "critical": 5,
+        "emergency": 15
+      },
+      "response_time_degradation_percent": {
+        "warning": 50,
+        "critical": 100,
+        "emergency": 200
+      },
+      "consecutive_failures": {
+        "warning": 3,
+        "critical": 5,
+        "emergency": 10
+      }
+    },
+    "escalation_rules": {
+      "warning_escalation_minutes": 5,
+      "critical_escalation_minutes": 2,
+      "emergency_escalation_minutes": 1,
+      "max_escalation_attempts": 3
+    },
+    "notification_settings": {
+      "suppress_during_maintenance": true,
+      "rate_limit_minutes": 5,
+      "digest_mode": false,
+      "include_performance_data": true,
+      "include_historical_context": true
+    },
+    "alert_templates": {
+      "downtime_alert": {
+        "subject": "[DOWNTIME] {{ service_name }} is down",
+        "message": "Service {{ service_name }} has been down for {{ duration_minutes }} minutes. Last check failed at {{ timestamp }}."
+      },
+      "recovery_alert": {
+        "subject": "[RECOVERY] {{ service_name }} is back online",
+        "message": "Service {{ service_name }} has recovered after {{ downtime_duration_minutes }} minutes of downtime."
+      },
+      "degraded_performance_alert": {
+        "subject": "[PERFORMANCE] {{ service_name }} response time degraded",
+        "message": "Service {{ service_name }} response time is {{ current_response_time }}ms, exceeding threshold of {{ threshold }}ms."
+      }
+    }
+  },
+  "data_retention": {
+    "realtime_data_hours": 24,
+    "hourly_aggregated_data_days": 7,
+    "daily_aggregated_data_months": 12,
+    "monthly_aggregated_data_years": 2,
+    "raw_check_data_days": 30,
+    "incident_data_months": 24,
+    "archive_policy": {
+      "compress_old_data": true,
+      "archive_location": "local_storage",
+      "cleanup_interval_hours": 24,
+      "max_storage_size_mb": 100
+    },
+    "data_export": {
+      "formats_supported": ["json", "csv", "xlsx"],
+      "scheduled_exports": false,
+      "export_encryption": false
+    }
+  },
+  "reporting_configuration": {
+    "uptime_reports": {
+      "enabled": true,
+      "frequency_hours": 24,
+      "include_sla_compliance": true,
+      "include_performance_metrics": true,
+      "include_incident_summary": true,
+      "include_trends": true
+    },
+    "dashboard_settings": {
+      "realtime_updates": true,
+      "update_interval_seconds": 30,
+      "show_response_time_chart": true,
+      "show_uptime_percentage": true,
+      "show_incident_timeline": true,
+      "historical_view_days": 30
+    },
+    "export_options": {
+      "available_formats": ["json", "csv"],
+      "include_raw_data": false,
+      "include_aggregated_data": true,
+      "date_range_limit_days": 90
+    }
+  },
+  "performance_optimization": {
+    "concurrent_checks": 5,
+    "connection_pooling": true,
+    "dns_caching": true,
+    "keep_alive_connections": true,
+    "request_compression": false,
+    "timeout_optimization": {
+      "connect_timeout_ms": 5000,
+      "read_timeout_ms": 10000,
+      "total_timeout_ms": 30000
+    },
+    "retry_strategy": {
+      "max_retries": 3,
+      "retry_delay_ms": 2000,
+      "exponential_backoff": true,
+      "jitter": true
+    }
+  },
+  "integration_settings": {
+    "health_checker_integration": {
+      "enabled": true,
+      "correlation_enabled": true,
+      "health_weight_factor": 0.3
+    },
+    "metrics_collector_integration": {
+      "enabled": true,
+      "store_uptime_metrics": true,
+      "store_response_times": true,
+      "store_availability_data": true
+    },
+    "logging_integration": {
+      "log_successful_checks": false,
+      "log_failed_checks": true,
+      "log_status_changes": true,
+      "log_performance_degradation": true,
+      "include_correlation_ids": true
+    }
+  },
+  "educational_features": {
+    "monitoring_concepts": {
+      "uptime_calculation_methods": "Demonstrates industry-standard uptime percentage calculation and SLA compliance tracking",
+      "availability_monitoring": "Shows comprehensive availability monitoring including endpoint validation and health correlation",
+      "external_service_integration": "Illustrates integration patterns with external monitoring services like Pingdom and UptimeRobot",
+      "threshold_configuration": "Teaches availability threshold configuration and status determination logic",
+      "data_retention_strategies": "Demonstrates monitoring data retention policies and historical data management"
+    },
+    "configuration_patterns": {
+      "json_schema_validation": "Shows JSON configuration design with comprehensive schema validation and documentation",
+      "environment_specific_settings": "Demonstrates environment-aware configuration with development, test, and production settings",
+      "modular_configuration": "Illustrates modular configuration design with separate sections for different monitoring aspects",
+      "extensibility_design": "Shows configuration extensibility for adding new monitoring services and features",
+      "documentation_integration": "Demonstrates inline documentation and configuration self-description patterns"
+    },
+    "monitoring_best_practices": {
+      "sla_compliance_tracking": "Teaches SLA definition, compliance monitoring, and availability target management",
+      "alerting_strategies": "Shows alerting configuration including escalation rules and notification management",
+      "performance_correlation": "Demonstrates correlation between uptime and performance metrics for comprehensive monitoring",
+      "incident_management": "Illustrates incident detection, tracking, and resolution workflow configuration",
+      "reporting_automation": "Shows automated reporting configuration for operational visibility and compliance documentation"
+    }
+  },
+  "configuration_validation": {
+    "endpoint_url_validation": "URLs validated for proper format, protocol specification, and accessibility",
+    "threshold_logical_ordering": "Thresholds validated for logical ordering and reasonable operational ranges",
+    "timeout_hierarchy_validation": "Timeout values validated for proper hierarchy and practical operational use",
+    "interval_consistency_check": "Check intervals validated for consistency and appropriate frequency",
+    "sla_target_validation": "SLA targets validated for achievable and industry-standard compliance levels"
+  },
+  "deployment_considerations": {
+    "environment_adaptation": {
+      "development": "Configuration adapted for local development with localhost endpoints and console logging",
+      "testing": "Test-specific configuration with fast intervals and simplified validation",
+      "production": "Production-ready configuration with external endpoints, comprehensive monitoring, and alerting"
+    },
+    "scalability_settings": {
+      "concurrent_monitoring": "Configuration supports concurrent monitoring of multiple endpoints",
+      "resource_optimization": "Settings optimized for minimal resource consumption in educational context",
+      "data_storage_limits": "Data retention configured for educational use with reasonable storage limits"
+    },
+    "security_considerations": {
+      "api_key_management": "External service API keys handled through environment variables",
+      "endpoint_security": "Monitoring endpoints configured with appropriate security considerations",
+      "data_privacy": "Configuration ensures monitoring data privacy and prevents information disclosure"
+    }
+  }
+}
