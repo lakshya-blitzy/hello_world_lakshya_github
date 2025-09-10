@@ -1,0 +1,299 @@
+# Node.js Tutorial HTTP Server - Comprehensive Health Monitoring Configuration
+# 
+# This YAML configuration file defines health monitoring parameters, thresholds, and alerting
+# rules for the Node.js tutorial HTTP server application. It provides centralized configuration
+# for health check intervals, performance thresholds, component monitoring settings, container
+# health checks, and integration with external monitoring systems.
+#
+# Educational Focus: Demonstrates infrastructure monitoring best practices for Node.js
+# applications while maintaining clarity and serving as a learning resource for health
+# monitoring configuration patterns.
+#
+# Dependencies: Configures health monitoring for Node.js v22.11.0 LTS application
+# Compatibility: Docker, Kubernetes, external monitoring services, shell scripts
+
+# Version and metadata for configuration tracking and compatibility
+version: "1.0.0"
+description: "Comprehensive health monitoring configuration for Node.js tutorial HTTP server"
+last_updated: "2024-12-19"
+compatibility:
+  nodejs_version: "22.11.0"
+  application_type: "tutorial-monolith"
+  monitoring_approach: "educational-production-ready"
+
+# Core health monitoring configuration including intervals, timeouts, and retry settings
+health_monitoring:
+  enabled: true
+  version: "1.0.0"
+  check_interval_seconds: 30          # Monitoring interval aligned with source code default
+  timeout_seconds: 10                 # Health check timeout from source code configuration
+  retry_attempts: 3                   # Default retry attempts from global configuration
+  retry_delay_seconds: 2              # Delay between health check retry attempts
+  continuous_monitoring: false        # Disabled for tutorial - can be enabled for production
+  alerting_enabled: false            # Alerting disabled for educational simplicity
+
+# Health endpoint configuration for primary application monitoring
+health_endpoints:
+  # Primary application endpoint for basic connectivity validation
+  primary_endpoint:
+    url: "http://127.0.0.1:3000/hello"
+    method: "GET"
+    expected_status_code: 200
+    expected_content: "Hello world"    # Exact response content from tutorial application
+    timeout_ms: 5000                   # Conservative timeout for primary endpoint
+    content_validation: true           # Validate response content for functional verification
+    
+  # Dedicated health endpoint for comprehensive application status
+  health_endpoint:
+    url: "http://127.0.0.1:3000/health"
+    method: "GET"
+    timeout_ms: 10000                  # HEALTH_CHECK_TIMEOUT_MS from source code
+    cache_ttl_ms: 5000                 # HEALTH_RESPONSE_CACHE_TTL_MS from source code
+    required_fields:                   # Required JSON fields in health response
+      - "status"
+      - "timestamp" 
+      - "server"
+      - "system"
+    response_format: "json"
+    
+  # Basic connectivity check for network validation
+  connectivity_check:
+    url: "http://127.0.0.1:3000/"
+    method: "HEAD"
+    timeout_ms: 3000
+    purpose: "network_connectivity_validation"
+
+# External monitoring service integration configuration
+monitoring_services:
+  # External uptime monitoring service configuration
+  external_monitoring:
+    enabled: false                     # Disabled by default for tutorial environment
+    services:                          # Supported external monitoring services
+      - "pingdom"
+      - "freshping" 
+      - "uptimerobot"
+    default_check_interval_seconds: 300 # 5-minute intervals for external services
+    notification_channels:
+      - "log"                          # Log-only notifications for tutorial
+      
+  # Uptime monitoring service configurations
+  uptime_services: []                  # Empty for tutorial - can be populated for production
+  
+  # Service configuration defaults
+  service_configuration:
+    notification_channels:
+      - "log"
+    alert_escalation_enabled: false
+    maintenance_window_support: true
+
+# Component-specific health check configuration for system monitoring
+component_health_checks:
+  # HTTP server health monitoring
+  server_health:
+    enabled: true
+    check_port_binding: true           # Verify server listening on port 3000
+    check_endpoint_availability: true   # Verify critical endpoints accessible
+    response_time_threshold_ms: 100    # PERFORMANCE_THRESHOLDS.RESPONSE_TIME_MS from server config
+    uptime_tracking: true
+    connection_pool_monitoring: true
+    
+  # System resource health monitoring  
+  system_health:
+    enabled: true
+    check_memory_usage: true           # Monitor system memory consumption
+    check_cpu_usage: true              # Monitor CPU utilization and load average
+    check_disk_space: true             # Monitor available disk space
+    check_network_interfaces: true     # Verify network connectivity
+    resource_trend_analysis: true
+    
+  # Node.js process health monitoring
+  process_health:
+    enabled: true
+    check_memory_leaks: true           # Monitor for potential memory leak indicators
+    check_event_loop: true             # Monitor event loop performance and lag
+    event_loop_lag_threshold_ms: 100   # DEFAULT_HEALTH_THRESHOLDS.eventLoopLagMs from source
+    heap_monitoring: true
+    garbage_collection_monitoring: true
+    
+  # Application performance health monitoring
+  performance_health:
+    enabled: true
+    monitor_response_times: true       # Track HTTP response time distribution
+    monitor_throughput: true           # Monitor request throughput and processing
+    monitor_error_rates: true          # Track HTTP error rate percentages
+    performance_baseline_tracking: true
+    trend_analysis_enabled: true
+
+# Health status thresholds for determining healthy/degraded/unhealthy classifications
+health_thresholds:
+  # Response time thresholds in milliseconds
+  response_time_ms:
+    healthy: 100                       # PERFORMANCE_THRESHOLDS.RESPONSE_TIME_MS from server config
+    degraded: 200                      # DEFAULT_HEALTH_THRESHOLDS.responseTimeMs from health checker
+    unhealthy: 1000                    # Threshold for unhealthy classification
+    
+  # Memory usage percentage thresholds
+  memory_usage_percent:
+    healthy: 60                        # Conservative healthy threshold
+    degraded: 80                       # DEFAULT_HEALTH_THRESHOLDS.memoryUsagePercent from source
+    unhealthy: 95                      # Critical memory usage threshold
+    
+  # CPU usage percentage thresholds  
+  cpu_usage_percent:
+    healthy: 50                        # Conservative healthy CPU usage
+    degraded: 70                       # DEFAULT_HEALTH_THRESHOLDS.cpuUsagePercent from source
+    unhealthy: 90                      # Critical CPU usage threshold
+    
+  # Error rate percentage thresholds
+  error_rate_percent:
+    healthy: 1.0                       # Low error rate for healthy status
+    degraded: 5.0                      # DEFAULT_HEALTH_THRESHOLDS.errorRatePercent from source
+    unhealthy: 10.0                    # High error rate indicating problems
+
+# Container and orchestration platform health check configuration
+container_health_checks:
+  # Docker container health check configuration
+  docker_healthcheck:
+    enabled: true
+    interval_seconds: 30               # Docker HEALTHCHECK interval
+    timeout_seconds: 10                # Docker HEALTHCHECK timeout  
+    retries: 3                         # Docker HEALTHCHECK retry attempts
+    start_period_seconds: 30           # Initial delay before health checks
+    command: "curl -f http://localhost:3000/health || exit 1"
+    
+  # Kubernetes probe configuration
+  kubernetes_probes:
+    # Liveness probe configuration
+    liveness_probe:
+      enabled: true
+      initial_delay_seconds: 30        # Startup time allowance
+      period_seconds: 10               # Liveness check interval
+      timeout_seconds: 5               # Probe timeout
+      failure_threshold: 3             # Failures before restart
+      success_threshold: 1             # Successes to recover
+      http_get:
+        path: "/health"
+        port: 3000
+        
+    # Readiness probe configuration  
+    readiness_probe:
+      enabled: true
+      initial_delay_seconds: 10        # Quick readiness verification
+      period_seconds: 5                # Readiness check frequency
+      timeout_seconds: 3               # Readiness timeout
+      failure_threshold: 3             # Failures before marking unready
+      success_threshold: 1             # Successes to mark ready
+      http_get:
+        path: "/hello"                 # Primary endpoint for readiness
+        port: 3000
+        
+  # Load balancer health check configuration
+  load_balancer_checks:
+    enabled: true
+    path: "/health"                    # Health check endpoint for load balancers
+    interval_seconds: 10               # Frequent load balancer checks
+    timeout_seconds: 5                 # Quick timeout for load balancer decisions
+    healthy_threshold: 2               # Consecutive successes for healthy
+    unhealthy_threshold: 3             # Consecutive failures for unhealthy
+
+# Monitoring system integration configuration
+monitoring_integration:
+  # Health check logging configuration
+  logging:
+    enabled: true
+    log_level: "info"                  # Standard logging level for health events
+    log_successful_checks: false       # Reduce noise - only log failures by default
+    log_failed_checks: true            # Always log health check failures
+    log_status_changes: true           # Log health status transitions
+    structured_logging: true           # Use structured log format
+    log_retention_days: 30             # Log retention period
+    
+  # Health check alerting configuration
+  alerting:
+    enabled: false                     # Disabled for tutorial environment
+    alert_on_status_change: true       # Alert when health status changes
+    alert_on_consecutive_failures: 3   # Alert after 3 consecutive failures
+    alert_channels:                    # Available alert channels
+      - "log"
+    alert_severity_mapping:
+      healthy: "info"
+      degraded: "warning" 
+      unhealthy: "critical"
+      
+  # Health metrics collection configuration
+  metrics_collection:
+    enabled: true
+    collect_response_times: true       # Collect response time metrics
+    collect_status_history: true       # Maintain health status history
+    history_retention_hours: 24        # 24-hour metric retention
+    metrics_aggregation_interval: 300  # 5-minute metric aggregation
+    export_format: "json"              # Metrics export format
+
+# Shell script integration configuration for automated health checking
+shell_script_integration:
+  # Health check command configuration for shell script automation
+  health_check_command:
+    curl_timeout: 10                   # Curl timeout matching health check timeout
+    max_retries: 3                     # Maximum retry attempts for shell scripts
+    retry_delay: 2                     # Delay between retries in seconds
+    verbose_output: true               # Enable verbose output for debugging
+    user_agent: "Health-Check-Script/1.0"
+    follow_redirects: true
+    silent_mode: true                  # Suppress curl progress information
+    
+  # Validation parameters for shell script health checking
+  validation_parameters:
+    primary_endpoint_path: "/hello"    # Primary endpoint for validation
+    health_endpoint_path: "/health"    # Health endpoint for comprehensive checks
+    expected_hello_response: "Hello world" # Expected response from hello endpoint
+    health_response_format: "json"     # Expected health endpoint response format
+    validate_content: true             # Perform content validation
+    validate_status_code: true         # Validate HTTP status codes
+    
+  # Exit codes for shell script integration
+  exit_codes:
+    success: 0                         # Successful health check
+    health_check_failed: 1             # Health check failed
+    network_error: 2                   # Network connectivity error
+    configuration_error: 3             # Configuration error
+    timeout_error: 4                   # Request timeout error
+    invalid_response: 5                # Invalid response format or content
+
+# Advanced configuration and integration settings
+advanced_configuration:
+  # Performance baseline tracking
+  performance_baseline:
+    enable_baseline_tracking: true
+    baseline_calculation_samples: 100   # Number of samples for baseline calculation
+    baseline_update_frequency: "daily"  # How often to recalculate baseline
+    
+  # Health check execution optimization
+  execution_optimization:
+    parallel_health_checks: true       # Execute health checks in parallel
+    health_check_caching: true         # Enable health check result caching
+    cache_invalidation_strategy: "ttl" # Cache invalidation based on TTL
+    
+  # Integration with external systems
+  external_integrations:
+    webhook_notifications: false       # Webhook notifications disabled for tutorial
+    metrics_export_enabled: false      # Metrics export disabled for simplicity
+    health_dashboard_integration: false # Dashboard integration not required
+
+# Educational documentation and examples
+documentation:
+  purpose: "Demonstrates comprehensive health monitoring configuration for Node.js applications"
+  learning_objectives:
+    - "Understanding health check configuration patterns"
+    - "Learning monitoring integration techniques"  
+    - "Practicing infrastructure monitoring setup"
+    - "Demonstrating container health check configuration"
+  usage_examples:
+    docker_compose: "docker-compose up with healthcheck configuration"
+    kubernetes: "kubectl apply with liveness and readiness probes"
+    monitoring_scripts: "automated health validation with shell scripts"
+  best_practices:
+    - "Configure appropriate timeouts for different check types"
+    - "Set realistic thresholds based on application performance characteristics" 
+    - "Implement graduated health status levels (healthy/degraded/unhealthy)"
+    - "Use caching to optimize health check performance"
+    - "Integrate with container orchestration platform health checks"
