@@ -6,17 +6,17 @@ describe('Server Integration Tests', () => {
   
   beforeEach(() => {
     // Create server instance for testing (don't start it - supertest handles that)
-    app = createServer({ port: 0 });
+    app = createServer('127.0.0.1', 0);
   });
 
   afterEach(async () => {
-    if (app && app.server && app.server.listening) {
-      await app.stop();
+    if (app && app.getServer && app.getServer().listening) {
+      await app.close();
     }
   });
 
   test('GET request returns 200 status with Hello World message', async () => {
-    const response = await request(app.server)
+    const response = await request(app.getServer())
       .get('/')
       .expect(200);
     
@@ -24,7 +24,7 @@ describe('Server Integration Tests', () => {
   });
 
   test('GET request returns correct Content-Type header', async () => {
-    await request(app.server)
+    await request(app.getServer())
       .get('/')
       .expect('Content-Type', 'text/plain')
       .expect(200);
@@ -36,7 +36,7 @@ describe('Server Integration Tests', () => {
     // Create 5 concurrent requests
     for (let i = 0; i < 5; i++) {
       requests.push(
-        request(app.server)
+        request(app.getServer())
           .get('/')
           .expect(200)
           .expect('Hello, World!\n')
@@ -54,7 +54,7 @@ describe('Server Integration Tests', () => {
   });
 
   test('POST request returns 200 status (same handler)', async () => {
-    const response = await request(app.server)
+    const response = await request(app.getServer())
       .post('/')
       .expect(200);
     
@@ -65,7 +65,7 @@ describe('Server Integration Tests', () => {
     const methods = ['get', 'post', 'put', 'delete'];
     
     for (const method of methods) {
-      const response = await request(app.server)[method]('/')
+      const response = await request(app.getServer())[method]('/')
         .expect(200);
       
       expect(response.text).toBe('Hello, World!\n');

@@ -30,7 +30,7 @@ module.exports = {
     '!node_modules/**',
     '!jest.config.js',
     '!tests/**',
-    '!server.js'  // Exclude entry point from coverage
+    '!blitzy_adhoc_test_*.js'  // Exclude ad-hoc test files
   ],
   
   // Setup and teardown
