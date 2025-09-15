@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Environment variables (if any local env files are created)
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
