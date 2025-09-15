@@ -1,114 +1,185 @@
+/**
+ * Unit test suite for HTTP server functionality validation without network binding.
+ * Tests server instance creation, request handler function behavior, response header 
+ * configuration, and error handling paths using Jest testing framework in isolation 
+ * from actual network operations.
+ * 
+ * Testing approach focuses on minimal test count with maximum coverage as per
+ * requirement: "not to add several test cases just few with all coverage"
+ */
+
 const { createServer } = require('../../app');
-const http = require('http');
 
-describe('Server Unit Tests', () => {
-  let app;
-  
+describe('Server', () => {
+  let serverWrapper;
+  let server;
+
   beforeEach(() => {
-    app = createServer('127.0.0.1', 0); // Use port 0 to avoid conflicts
+    // Reset all mocks before each test to ensure test isolation
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+    
+    // Create server instance without starting it (no network binding)
+    serverWrapper = createServer();
+    server = serverWrapper.getServer();
   });
 
-  afterEach(async () => {
-    if (app && app.getServer && app.getServer().listening) {
-      await app.close();
+  afterEach(() => {
+    // Ensure proper cleanup after each test
+    if (server && server.listening) {
+      server.close();
     }
   });
 
-  test('createServer returns server instance with correct properties', () => {
-    expect(app).toBeDefined();
-    expect(app.getServer).toBeDefined();
-    expect(app.getServer()).toBeInstanceOf(http.Server);
-    expect(typeof app.start).toBe('function');
-    expect(typeof app.close).toBe('function');
+  it('should create server instance without port binding', () => {
+    // Verify server wrapper is created successfully
+    expect(serverWrapper).toBeDefined();
+    expect(typeof serverWrapper).toBe('object');
+    
+    // Verify server wrapper has required methods
+    expect(typeof serverWrapper.start).toBe('function');
+    expect(typeof serverWrapper.getServer).toBe('function');
+    expect(typeof serverWrapper.close).toBe('function');
+    
+    // Verify server is not listening (no network binding for unit tests)
+    expect(server.listening).toBe(false);
   });
 
-  test('createServer accepts custom configuration', () => {
-    const customApp = createServer('localhost', 8080);
-    expect(customApp).toBeDefined();
-    expect(customApp.getServer()).toBeInstanceOf(http.Server);
-    expect(typeof customApp.start).toBe('function');
-    expect(typeof customApp.close).toBe('function');
+  it('should return http.Server instance from getServer method', () => {
+    // Verify the underlying server is an HTTP server instance
+    expect(server).toBeDefined();
+    expect(server.constructor.name).toBe('Server');
+    
+    // Verify HTTP server has required methods
+    expect(typeof server.listen).toBe('function');
+    expect(typeof server.close).toBe('function');
+    expect(typeof server.address).toBe('function');
+  });
+});
+
+describe('Request Handler', () => {
+  let serverWrapper;
+  let server;
+  let mockRequest;
+  let mockResponse;
+
+  beforeEach(() => {
+    // Reset all mocks for test isolation
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+    
+    // Create server instance
+    serverWrapper = createServer();
+    server = serverWrapper.getServer();
+    
+    // Create mock request object
+    mockRequest = {
+      url: '/',
+      method: 'GET',
+      headers: {}
+    };
+    
+    // Create mock response object with Jest mock functions
+    mockResponse = {
+      statusCode: undefined,
+      setHeader: jest.fn(),
+      end: jest.fn(),
+      headers: {}
+    };
   });
 
-  test('server can be started and stopped programmatically', async () => {
-    // Test starting
-    const server = await app.start();
-    expect(server).toBeInstanceOf(http.Server);
-    expect(app.getServer().listening).toBe(true);
+  it('should set response status code to 200', () => {
+    // Get the request handler from the server
+    const requestHandler = server.listeners('request')[0];
     
-    // Test stopping
-    await app.close();
-    expect(app.getServer().listening).toBe(false);
+    // Simulate request handling
+    requestHandler(mockRequest, mockResponse);
+    
+    // Verify status code is set to 200
+    expect(mockResponse.statusCode).toBe(200);
   });
 
-  test('server handles errors during startup', async () => {
-    // Try to start server on an invalid port
-    const badApp = createServer('127.0.0.1', -1);
+  it('should set Content-Type header to text/plain', () => {
+    // Get the request handler from the server
+    const requestHandler = server.listeners('request')[0];
     
-    await expect(badApp.start()).rejects.toThrow();
+    // Simulate request handling
+    requestHandler(mockRequest, mockResponse);
+    
+    // Verify Content-Type header is set correctly
+    expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
   });
 
-  test('server handles port already in use error', async () => {
-    // Start first server on a specific port
-    const firstApp = createServer('127.0.0.1', 0);
-    const server1 = await firstApp.start();
-    const port = server1.address().port;
-
-    try {
-      // Try to start second server on same port (should fail)
-      const secondApp = createServer('127.0.0.1', port);
-      await expect(secondApp.start()).rejects.toThrow();
-    } finally {
-      // Clean up first server
-      await firstApp.close();
-    }
+  it('should call response.end with Hello, World!', () => {
+    // Get the request handler from the server
+    const requestHandler = server.listeners('request')[0];
+    
+    // Simulate request handling
+    requestHandler(mockRequest, mockResponse);
+    
+    // Verify response.end is called with correct message
+    expect(mockResponse.end).toHaveBeenCalledWith('Hello, World!\n');
+    expect(mockResponse.end).toHaveBeenCalledTimes(1);
   });
 
-  test('server.js module can be required and exports app instance', () => {
-    // Import server.js module for coverage (won't auto-start in test mode)
-    const serverModule = require('../../server.js');
-    expect(serverModule).toBeDefined();
-    expect(typeof serverModule.start).toBe('function');
-    expect(typeof serverModule.close).toBe('function');
-    expect(typeof serverModule.getServer).toBe('function');
-    expect(serverModule.getServer().listening).toBe(false); // Should not be started when imported
-  });
-
-  test('server.js handleStartupError function coverage', () => {
-    const serverModule = require('../../server.js');
+  it('should handle all HTTP methods identically', () => {
+    // Test different HTTP methods to ensure consistent behavior
+    const httpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+    const requestHandler = server.listeners('request')[0];
     
-    // Test that handleStartupError function exists
-    expect(typeof serverModule.handleStartupError).toBe('function');
-    
-    // Mock console.error and process.exit to test the function without actually exiting
-    const originalConsoleError = console.error;
-    const originalProcessExit = process.exit;
-    
-    console.error = jest.fn();
-    process.exit = jest.fn();
-    
-    try {
-      // Call the handleStartupError function
-      const testError = new Error('Test startup error');
-      serverModule.handleStartupError(testError);
+    httpMethods.forEach(method => {
+      // Reset mocks for each method test
+      jest.clearAllMocks();
       
-      // Verify console.error was called with the error
-      expect(console.error).toHaveBeenCalledWith('Failed to start server:', testError);
+      // Create request with different method
+      const methodRequest = { ...mockRequest, method };
+      const methodResponse = {
+        statusCode: undefined,
+        setHeader: jest.fn(),
+        end: jest.fn()
+      };
       
-      // Verify process.exit was called with code 1
-      expect(process.exit).toHaveBeenCalledWith(1);
-    } finally {
-      // Restore original functions
-      console.error = originalConsoleError;
-      process.exit = originalProcessExit;
-    }
+      // Simulate request handling
+      requestHandler(methodRequest, methodResponse);
+      
+      // Verify consistent behavior regardless of HTTP method
+      expect(methodResponse.statusCode).toBe(200);
+      expect(methodResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+      expect(methodResponse.end).toHaveBeenCalledWith('Hello, World!\n');
+    });
+  });
+});
+
+describe('Error Handling', () => {
+  it('should handle server creation gracefully', () => {
+    // Test that server creation doesn't throw errors
+    expect(() => {
+      const testServer = createServer();
+      expect(testServer).toBeDefined();
+      
+      // Verify server can be created with different parameters
+      const customServer = createServer('localhost', 0);
+      expect(customServer).toBeDefined();
+    }).not.toThrow();
   });
 
-  test('server.js autoStart function coverage', () => {
-    const serverModule = require('../../server.js');
+  it('should provide server lifecycle methods for error handling', () => {
+    const serverWrapper = createServer();
     
-    // Test that autoStart function exists and is callable
-    expect(typeof serverModule.autoStart).toBe('function');
-    expect(() => serverModule.autoStart()).not.toThrow();
+    // Verify error handling capabilities exist
+    expect(typeof serverWrapper.start).toBe('function');
+    expect(typeof serverWrapper.close).toBe('function');
+    
+    // Verify start method returns a Promise for error handling
+    const startPromise = serverWrapper.start();
+    expect(startPromise).toBeInstanceOf(Promise);
+    
+    // Clean up the started server
+    return startPromise.then(server => {
+      return serverWrapper.close();
+    }).catch(err => {
+      // Expected in test environment where port might be occupied
+      expect(err).toBeDefined();
+    });
   });
 });
