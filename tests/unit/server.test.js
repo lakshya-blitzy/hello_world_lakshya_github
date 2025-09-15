@@ -73,4 +73,42 @@ describe('Server Unit Tests', () => {
     expect(typeof serverModule.getServer).toBe('function');
     expect(serverModule.getServer().listening).toBe(false); // Should not be started when imported
   });
+
+  test('server.js handleStartupError function coverage', () => {
+    const serverModule = require('../../server.js');
+    
+    // Test that handleStartupError function exists
+    expect(typeof serverModule.handleStartupError).toBe('function');
+    
+    // Mock console.error and process.exit to test the function without actually exiting
+    const originalConsoleError = console.error;
+    const originalProcessExit = process.exit;
+    
+    console.error = jest.fn();
+    process.exit = jest.fn();
+    
+    try {
+      // Call the handleStartupError function
+      const testError = new Error('Test startup error');
+      serverModule.handleStartupError(testError);
+      
+      // Verify console.error was called with the error
+      expect(console.error).toHaveBeenCalledWith('Failed to start server:', testError);
+      
+      // Verify process.exit was called with code 1
+      expect(process.exit).toHaveBeenCalledWith(1);
+    } finally {
+      // Restore original functions
+      console.error = originalConsoleError;
+      process.exit = originalProcessExit;
+    }
+  });
+
+  test('server.js autoStart function coverage', () => {
+    const serverModule = require('../../server.js');
+    
+    // Test that autoStart function exists and is callable
+    expect(typeof serverModule.autoStart).toBe('function');
+    expect(() => serverModule.autoStart()).not.toThrow();
+  });
 });
