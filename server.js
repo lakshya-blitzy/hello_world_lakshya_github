@@ -1,14 +1,28 @@
-const http = require('http');
+const { createServer } = require('./app');
 
-const hostname = '127.0.0.1';
-const port = 3000;
+// Create server instance
+const app = createServer();
 
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello, World!\n');
-});
+// Error handler function for testability
+const handleStartupError = (err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+};
 
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
-});
+// Auto-start function for testability
+const autoStart = () => {
+  if (require.main === module) {
+    app.start().catch(handleStartupError);
+  }
+};
+
+// Execute auto-start
+autoStart();
+
+// Export the app instance for testing
+// This provides access to server lifecycle methods: start(), close(), getServer()
+// The getServer() method returns the native HTTP server instance with methods: listen(), close(), address(), listening
+// Also export internal functions for testing
+module.exports = app;
+module.exports.handleStartupError = handleStartupError;
+module.exports.autoStart = autoStart;
