@@ -3,17 +3,26 @@ const { createServer } = require('./app');
 // Create server instance
 const app = createServer();
 
-// Get the underlying HTTP server instance for export
-const server = app.getServer();
+// Error handler function for testability
+const handleStartupError = (err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+};
 
-// Only start the server if this module is run directly (not imported)
-if (require.main === module) {
-  app.start().catch((err) => {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-  });
-}
+// Auto-start function for testability
+const autoStart = () => {
+  if (require.main === module) {
+    app.start().catch(handleStartupError);
+  }
+};
 
-// Export the server instance for testing
-// This provides access to native HTTP server methods: listen(), close(), address(), listening
-module.exports = { server };
+// Execute auto-start
+autoStart();
+
+// Export the app instance for testing
+// This provides access to server lifecycle methods: start(), close(), getServer()
+// The getServer() method returns the native HTTP server instance with methods: listen(), close(), address(), listening
+// Also export internal functions for testing
+module.exports = app;
+module.exports.handleStartupError = handleStartupError;
+module.exports.autoStart = autoStart;
