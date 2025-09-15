@@ -1,37 +1,109 @@
-# Dependencies
+# Node.js Dependencies
+# Exclude all npm packages and dependency installations
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Coverage reports
+# Package Manager Lock Files (optional - keep package-lock.json for consistency)
+# package-lock.json  # Uncomment if you prefer not to track lock file changes
+# yarn.lock
+
+# Testing Infrastructure Artifacts
+# Jest test framework generates coverage reports and cache files
 coverage/
 .nyc_output/
+jest-cache/
+.jest/
 
-# Environment variables (if any local env files are created)
-.env.local
-.env.*.local
+# Test Results and Reports
+test-results/
+*.lcov
+junit.xml
+coverage.json
 
-# Logs
-*.log
-npm-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# IDE files
+# Development Environment Files
+# IDE and editor specific files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS files
+# Operating System Files
+# macOS system files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Windows system files
 Thumbs.db
+Desktop.ini
+
+# Linux/Unix system files
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Runtime and Logging
+# Application logs and runtime artifacts
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary Files
+# Node.js and application temporary files
+.tmp/
+.temp/
+tmp/
+temp/
+.sass-cache/
+
+# Environment Configuration
+# Environment variable files (if created during development)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build Artifacts (for future expansion)
+# If build process is added later, these directories should be excluded
+build/
+dist/
+lib/
+out/
+
+# Development Utilities
+# Miscellaneous development artifacts
+.eslintcache
+.stylelintcache
+
+# Debugging
+# Node.js debugging and profiling files
+.vscode/launch.json
+.vscode/settings.json
+inspector-*.log
+
+# Documentation Generation (if added)
+docs/generated/
+api-docs/
+
+# Performance and Analysis
+# Node.js performance monitoring files
+.clinic/
+flamegraph.html
+isolate-*.log
+
+# Cache Directories
+# Various cache directories that may be created
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vercel
