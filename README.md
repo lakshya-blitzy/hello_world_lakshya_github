@@ -63,14 +63,20 @@ The test suite is organized as follows:
 
 ### Coverage Requirements
 
-The test suite maintains the following coverage thresholds:
+The test suite targets the following coverage thresholds for `server.js`:
 
-- **Line Coverage**: 83% (10 out of 12 lines covered)
-- **Branch Coverage**: 50% (1 out of 2 branches covered)
-- **Function Coverage**: 66% (2 out of 3 functions covered)
-- **Statement Coverage**: 83% (10 out of 12 statements covered)
+- **Line Coverage**: 85% minimum
+- **Branch Coverage**: 80% minimum
+- **Function Coverage**: 100% (all functions must be tested)
+- **Statement Coverage**: 85% minimum
 
-**Note**: The uncovered code (lines 21-22) is the `app.listen()` callback which is only executed when `server.js` is run directly (`node server.js`), not when imported for testing. This is intentional to prevent port conflicts during testing.
+**Current Coverage Achieved**:
+- Line Coverage: 83% (10 out of 12 lines covered)
+- Branch Coverage: 50% (1 out of 2 branches covered)
+- Function Coverage: 66% (2 out of 3 functions covered)
+- Statement Coverage: 83% (10 out of 12 statements covered)
+
+**Note**: The uncovered code (lines 21-22) is the `app.listen()` callback which is only executed when `server.js` is run directly (`node server.js`), not when imported for testing. This is intentional to prevent port conflicts during testing and represents expected behavior rather than a coverage gap.
 
 ### Viewing Coverage Reports
 
