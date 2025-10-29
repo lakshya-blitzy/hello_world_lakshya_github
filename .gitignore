@@ -1,0 +1,28 @@
+# Test artifacts and coverage reports
+coverage/
+.jest-cache/
+*.log
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# macOS system files
+.DS_Store
+
+# Editor temporary files
+*.swp
+*.swo
+
+# IDE settings (optional, team preference)
+.vscode/
+.idea/
+
+# Build and runtime artifacts
+dist/
+build/
+*.pid
+npm-debug.log*
+yarn-error.log
