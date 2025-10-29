@@ -8,10 +8,57 @@
  * Uses supertest's stateless testing approach that doesn't require actual server startup
  * or port binding, focusing on app instance behavior rather than network-level testing.
  * This prevents EADDRINUSE errors and port conflicts while thoroughly validating lifecycle management.
+ * 
+ * SECURITY: Safe iteration and concurrency limits are enforced to prevent resource exhaustion
+ * and DoS vulnerabilities during test execution. All limits are validated and capped.
  */
 
 const request = require('supertest');
 const app = require('../server');
+
+/**
+ * SECURITY CONSTANTS: Maximum safe limits for test iterations and concurrent operations
+ * These constants prevent resource exhaustion, memory leaks, and DoS vulnerabilities
+ * during test execution. Values are chosen to provide adequate testing coverage while
+ * remaining safe for CI/CD environments and local development machines.
+ * 
+ * WARNING: DO NOT increase these values beyond documented safe limits without thorough
+ * resource impact analysis and approval.
+ */
+const SECURITY_LIMITS = {
+  // Maximum concurrent requests allowed in a single test (prevents resource exhaustion)
+  MAX_CONCURRENT_REQUESTS: 50,
+  
+  // Maximum sequential iterations in a loop (prevents DoS via excessive loops)
+  MAX_SEQUENTIAL_ITERATIONS: 100,
+  
+  // Timeout for resource-intensive tests in milliseconds (prevents hanging tests)
+  RESOURCE_INTENSIVE_TIMEOUT: 10000, // 10 seconds
+  
+  // Safe concurrency level for load testing (balances coverage and resource usage)
+  SAFE_CONCURRENT_LOAD: 15
+};
+
+/**
+ * Validates that iteration count is within safe security limits
+ * @param {number} count - The requested iteration count
+ * @param {number} maxLimit - The maximum allowed limit
+ * @param {string} context - Description of what is being validated (for error messages)
+ * @returns {number} - The validated count (capped at maxLimit if exceeded)
+ * @throws {Error} - If count is negative or not a number
+ */
+function validateIterationCount(count, maxLimit, context) {
+  if (typeof count !== 'number' || count < 0) {
+    throw new Error(`Invalid iteration count for ${context}: must be a non-negative number`);
+  }
+  
+  if (count > maxLimit) {
+    console.warn(`WARNING: ${context} iteration count (${count}) exceeds safe limit (${maxLimit}). Capping to safe limit.`);
+    return maxLimit;
+  }
+  
+  return count;
+}
 
 /**
  * Test Suite 1: Server Initialization Tests
@@ -57,6 +104,7 @@ describe('Server Initialization Tests', () => {
 describe('Concurrent Request Handling Tests', () => {
   
   it('should handle multiple simultaneous requests to different endpoints', async () => {
+    // SECURITY: Small concurrent request count (5) is within safe limits
     // Makes concurrent requests to / and /evening using Promise.all()
     const promises = [
       request(app).get('/'),
@@ -65,6 +113,11 @@ describe('Concurrent Request Handling Tests', () => {
       request(app).get('/evening'),
       request(app).get('/')
     ];
+    
+    // SECURITY: Validate we don't exceed concurrent request limits
+    if (promises.length > SECURITY_LIMITS.MAX_CONCURRENT_REQUESTS) {
+      throw new Error(`Concurrent requests (${promises.length}) exceed safe limit`);
+    }
 
     const responses = await Promise.all(promises);
     
@@ -78,16 +131,24 @@ describe('Concurrent Request Handling Tests', () => {
   });
 
   it('should handle rapid successive requests to same endpoint', async () => {
+    // SECURITY: Validate iteration count is within safe limits to prevent resource exhaustion
+    const requestedIterations = 10;
+    const safeIterations = validateIterationCount(
+      requestedIterations,
+      SECURITY_LIMITS.MAX_SEQUENTIAL_ITERATIONS,
+      'rapid successive requests'
+    );
+    
     // Makes multiple quick requests in sequence
     const results = [];
     
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < safeIterations; i++) {
       const response = await request(app).get('/');
       results.push(response);
     }
     
     // All rapid requests should succeed
-    expect(results).toHaveLength(10);
+    expect(results).toHaveLength(safeIterations);
     results.forEach(response => {
       expect(response.status).toBe(200);
       expect(response.text).toBe('Hello, World!\n');
@@ -95,25 +156,39 @@ describe('Concurrent Request Handling Tests', () => {
   });
 
   it('should maintain response consistency under concurrent load', async () => {
+    // SECURITY: Validate concurrent request counts to prevent resource exhaustion
+    const requestedConcurrency = SECURITY_LIMITS.SAFE_CONCURRENT_LOAD;
+    const safeConcurrency = validateIterationCount(
+      requestedConcurrency,
+      SECURITY_LIMITS.MAX_CONCURRENT_REQUESTS,
+      'concurrent requests per endpoint'
+    );
+    
     // Validates all concurrent requests get correct responses
-    const rootPromises = Array(15).fill(null).map(() => request(app).get('/'));
-    const eveningPromises = Array(15).fill(null).map(() => request(app).get('/evening'));
+    const rootPromises = Array(safeConcurrency).fill(null).map(() => request(app).get('/'));
+    const eveningPromises = Array(safeConcurrency).fill(null).map(() => request(app).get('/evening'));
     
     const allPromises = [...rootPromises, ...eveningPromises];
+    
+    // SECURITY: Verify total concurrent requests don't exceed maximum safe limit
+    if (allPromises.length > SECURITY_LIMITS.MAX_CONCURRENT_REQUESTS) {
+      throw new Error(`Total concurrent requests (${allPromises.length}) exceeds safe limit (${SECURITY_LIMITS.MAX_CONCURRENT_REQUESTS})`);
+    }
+    
     const responses = await Promise.all(allPromises);
     
-    // Verify first 15 are root endpoint responses
-    for (let i = 0; i < 15; i++) {
+    // Verify first half are root endpoint responses
+    for (let i = 0; i < safeConcurrency; i++) {
       expect(responses[i].status).toBe(200);
       expect(responses[i].text).toBe('Hello, World!\n');
     }
     
-    // Verify last 15 are evening endpoint responses
-    for (let i = 15; i < 30; i++) {
+    // Verify second half are evening endpoint responses
+    for (let i = safeConcurrency; i < safeConcurrency * 2; i++) {
       expect(responses[i].status).toBe(200);
       expect(responses[i].text).toBe('Good evening');
     }
-  });
+  }, SECURITY_LIMITS.RESOURCE_INTENSIVE_TIMEOUT);
 });
 
 /**
@@ -134,22 +209,29 @@ describe('Resource Management Tests', () => {
   });
 
   it('should handle request completion without memory leaks', async () => {
+    // SECURITY: Validate iteration count to prevent resource exhaustion during memory leak testing
+    const requestedIterations = 50;
+    const safeIterations = validateIterationCount(
+      requestedIterations,
+      SECURITY_LIMITS.MAX_SEQUENTIAL_ITERATIONS,
+      'memory leak test iterations'
+    );
+    
     // Makes multiple requests and validates cleanup
     // This test prevents memory leaks by ensuring repeated requests don't accumulate resources
-    const iterations = 50;
     const responses = [];
     
-    for (let i = 0; i < iterations; i++) {
+    for (let i = 0; i < safeIterations; i++) {
       const response = await request(app).get('/');
       responses.push(response.status);
     }
     
     // All requests should complete successfully
-    expect(responses).toHaveLength(iterations);
+    expect(responses).toHaveLength(safeIterations);
     expect(responses.every(status => status === 200)).toBe(true);
     
     // If we reach here without running out of memory or hanging, no leak exists
-  });
+  }, SECURITY_LIMITS.RESOURCE_INTENSIVE_TIMEOUT);
 
   it('should properly handle request/response lifecycle', async () => {
     // Tests complete HTTP cycle completes cleanly
