@@ -4,7 +4,7 @@
  * A simple HTTP server demonstrating Express.js routing capabilities
  * with two endpoints:
  * - GET / : Returns "Hello, World!" (original functionality)
- * - GET /evening : Returns "have a nice day" (new endpoint)
+ * - GET /evening : Returns "nice to meet you?" (new endpoint)
  * 
  * Server Configuration:
  * - Hostname: 127.0.0.1
@@ -32,10 +32,10 @@ app.get('/', (req, res) => {
 /**
  * Evening endpoint - new endpoint per requirements
  * GET /evening
- * Returns: "have a nice day" with Content-Type: text/plain
+ * Returns: "nice to meet you?" with Content-Type: text/plain
  */
 app.get('/evening', (req, res) => {
-  res.type('text/plain').send('have a nice day');
+  res.type('text/plain').send('nice to meet you?');
 });
 
 // Start the server with the same configuration as original implementation
