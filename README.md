@@ -7,17 +7,30 @@
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [System Purpose](#system-purpose)
-3. [Business Problems Addressed](#business-problems-addressed)
-4. [Key Accounting Features](#key-accounting-features)
+2. [Getting Started](#getting-started)
+   - [Prerequisites](#prerequisites)
+   - [Installation](#installation)
+   - [Running the Server](#running-the-server)
+3. [API Documentation](#api-documentation)
+   - [Endpoints](#endpoints)
+   - [Response Formats](#response-formats)
+   - [Error Handling](#error-handling)
+4. [Deployment Guide](#deployment-guide)
+   - [Development Environment](#development-environment)
+   - [Production Environment](#production-environment)
+   - [Environment Variables](#environment-variables)
+   - [Health Checks](#health-checks)
+5. [System Purpose](#system-purpose)
+6. [Business Problems Addressed](#business-problems-addressed)
+7. [Key Accounting Features](#key-accounting-features)
    - [Invoicing](#invoicing)
    - [Ledger](#ledger)
    - [Payments](#payments)
    - [Reporting](#reporting)
-5. [User Roles and Responsibilities](#user-roles-and-responsibilities)
-6. [Assumptions and Limitations](#assumptions-and-limitations)
-7. [Current Project Status](#current-project-status)
-8. [Future Scope and Planned Capabilities](#future-scope-and-planned-capabilities)
+8. [User Roles and Responsibilities](#user-roles-and-responsibilities)
+9. [Assumptions and Limitations](#assumptions-and-limitations)
+10. [Current Project Status](#current-project-status)
+11. [Future Scope and Planned Capabilities](#future-scope-and-planned-capabilities)
 
 ---
 
@@ -28,6 +41,395 @@ This document provides a high-level product specification for the Accounting Sys
 As a product specification, this document focuses exclusively on the business and functional description of the intended system. It outlines the purpose, key features, user roles, and planned capabilities of the Accounting System from a business perspective.
 
 **Important Note:** This system is currently under active development. The specifications described herein represent the intended functionality and capabilities of the Accounting System as it is being built.
+
+---
+
+## Getting Started
+
+This section provides instructions for setting up and running the Accounting System server on your local development machine.
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+| Requirement | Minimum Version | Recommended Version | Purpose |
+|-------------|-----------------|---------------------|---------|
+| Node.js | 14.x | 18.x or later | JavaScript runtime environment |
+| npm | 6.x | 9.x or later | Package manager (included with Node.js) |
+
+**Verify Node.js Installation:**
+
+```bash
+# Check Node.js version
+node --version
+
+# Check npm version
+npm --version
+```
+
+**Installing Node.js:**
+
+- **macOS/Linux:** Use [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) or download from [nodejs.org](https://nodejs.org/)
+- **Windows:** Download the installer from [nodejs.org](https://nodejs.org/) or use [nvm-windows](https://github.com/coreybutler/nvm-windows)
+
+### Installation
+
+Follow these steps to set up the project locally:
+
+1. **Clone the Repository**
+
+   ```bash
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
+
+2. **Verify Project Files**
+
+   Ensure the `server.js` file exists in the project root:
+
+   ```bash
+   ls -la server.js
+   ```
+
+3. **No Dependencies Required**
+
+   The current implementation uses only Node.js built-in modules and does not require any external dependencies. No `npm install` is needed at this stage.
+
+### Running the Server
+
+Start the HTTP server using one of the following methods:
+
+**Standard Start:**
+
+```bash
+node server.js
+```
+
+**Expected Output:**
+
+```
+Server running at http://127.0.0.1:3000/
+```
+
+**Verify Server is Running:**
+
+Open a new terminal window and test the server:
+
+```bash
+# Using curl
+curl http://127.0.0.1:3000/
+
+# Expected response:
+# Hello, World!
+```
+
+Or open your web browser and navigate to: `http://127.0.0.1:3000/`
+
+**Stopping the Server:**
+
+Press `Ctrl+C` in the terminal where the server is running.
+
+---
+
+## API Documentation
+
+This section documents the HTTP API endpoints exposed by the Accounting System server.
+
+### Endpoints
+
+#### Root Endpoint
+
+| Property | Value |
+|----------|-------|
+| **URL** | `/` |
+| **Method** | `GET` (and all other HTTP methods) |
+| **Description** | Returns a simple greeting message |
+| **Authentication** | None required |
+| **Rate Limiting** | None |
+
+**Request:**
+
+```http
+GET / HTTP/1.1
+Host: 127.0.0.1:3000
+```
+
+**Response:**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+Hello, World!
+```
+
+**Example Usage:**
+
+```bash
+# Using curl
+curl -X GET http://127.0.0.1:3000/
+
+# Using wget
+wget -qO- http://127.0.0.1:3000/
+
+# Using httpie
+http GET http://127.0.0.1:3000/
+```
+
+**Programmatic Access (Node.js):**
+
+```javascript
+const http = require('http');
+
+http.get('http://127.0.0.1:3000/', (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => { console.log(data); });
+});
+```
+
+**Programmatic Access (Python):**
+
+```python
+import requests
+
+response = requests.get('http://127.0.0.1:3000/')
+print(response.text)
+```
+
+### Response Formats
+
+All responses from the current API implementation are returned in plain text format.
+
+| Content Type | Format | Description |
+|--------------|--------|-------------|
+| `text/plain` | Plain Text | Simple text responses without formatting |
+
+**Response Headers:**
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `Content-Type` | `text/plain` | Indicates plain text response body |
+
+### Error Handling
+
+The current implementation does not include explicit error handling. All requests receive a successful `200 OK` response with the "Hello, World!" message.
+
+**Future Error Response Format (Planned):**
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {}
+  }
+}
+```
+
+**HTTP Status Codes Reference:**
+
+| Status Code | Meaning | Description |
+|-------------|---------|-------------|
+| 200 | OK | Request succeeded |
+| 400 | Bad Request | Invalid request syntax (future) |
+| 401 | Unauthorized | Authentication required (future) |
+| 403 | Forbidden | Access denied (future) |
+| 404 | Not Found | Resource not found (future) |
+| 500 | Internal Server Error | Server error (future) |
+
+---
+
+## Deployment Guide
+
+This section provides guidance for deploying the Accounting System server in various environments.
+
+### Development Environment
+
+**Quick Start for Development:**
+
+```bash
+# Navigate to project directory
+cd /path/to/project
+
+# Start the server
+node server.js
+
+# Server will be available at http://127.0.0.1:3000/
+```
+
+**Development with Auto-Restart (using nodemon):**
+
+```bash
+# Install nodemon globally (one-time setup)
+npm install -g nodemon
+
+# Start server with auto-restart on file changes
+nodemon server.js
+```
+
+**Development Best Practices:**
+
+1. Use a consistent Node.js version across team members
+2. Test changes locally before committing
+3. Use the curl commands provided to verify server responses
+
+### Production Environment
+
+**Basic Production Deployment:**
+
+1. **Server Preparation**
+
+   ```bash
+   # Update system packages
+   sudo apt-get update && sudo apt-get upgrade -y
+
+   # Install Node.js (Ubuntu/Debian)
+   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+   ```
+
+2. **Application Deployment**
+
+   ```bash
+   # Clone or copy application files
+   git clone <repository-url> /opt/accounting-system
+   cd /opt/accounting-system
+
+   # Verify server starts correctly
+   node server.js
+   ```
+
+3. **Process Management with PM2**
+
+   ```bash
+   # Install PM2 globally
+   npm install -g pm2
+
+   # Start the application
+   pm2 start server.js --name "accounting-system"
+
+   # Configure PM2 to start on system boot
+   pm2 startup
+   pm2 save
+
+   # View logs
+   pm2 logs accounting-system
+
+   # Monitor application
+   pm2 monit
+   ```
+
+4. **PM2 Configuration File (ecosystem.config.js):**
+
+   ```javascript
+   module.exports = {
+     apps: [{
+       name: 'accounting-system',
+       script: 'server.js',
+       instances: 'max',
+       exec_mode: 'cluster',
+       env: {
+         NODE_ENV: 'development',
+         PORT: 3000,
+         HOSTNAME: '127.0.0.1'
+       },
+       env_production: {
+         NODE_ENV: 'production',
+         PORT: 3000,
+         HOSTNAME: '0.0.0.0'
+       }
+     }]
+   };
+   ```
+
+**Reverse Proxy Configuration (Nginx):**
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### Environment Variables
+
+The following environment variables can be used to configure the server (requires code modifications to implement):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Port number for the HTTP server |
+| `HOSTNAME` | `127.0.0.1` | IP address to bind the server |
+| `NODE_ENV` | `development` | Environment mode (development/production) |
+
+**Setting Environment Variables:**
+
+```bash
+# Linux/macOS
+export PORT=8080
+export HOSTNAME=0.0.0.0
+node server.js
+
+# Windows (Command Prompt)
+set PORT=8080
+set HOSTNAME=0.0.0.0
+node server.js
+
+# Windows (PowerShell)
+$env:PORT=8080
+$env:HOSTNAME="0.0.0.0"
+node server.js
+```
+
+### Health Checks
+
+**Basic Health Check:**
+
+```bash
+# Check if server responds
+curl -f http://127.0.0.1:3000/ || exit 1
+```
+
+**Health Check Script (health-check.sh):**
+
+```bash
+#!/bin/bash
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/)
+
+if [ "$RESPONSE" == "200" ]; then
+    echo "Health check passed"
+    exit 0
+else
+    echo "Health check failed with status: $RESPONSE"
+    exit 1
+fi
+```
+
+**Docker Health Check (if using Docker):**
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
+```
+
+**Monitoring Recommendations:**
+
+1. Set up monitoring for server availability (uptime)
+2. Monitor response times and error rates
+3. Set up alerts for server downtime
+4. Log all requests for debugging purposes
 
 ---
 
